@@ -8,7 +8,7 @@
 | **Grupo / Equipa** | 1 |
 | **Autores** | Beatriz Miranda |
 | **Data** | 2026-10-13 |
-| **Versão do documento** | v1.0 |
+| **Versão do documento** | v1.0.1 |
 | **Unidade Curricular** | Requisitos e Arquiteturas de Software — MEI, Universidade do Minho |
 
 ## 1. Funcionalidade de vídeo escolhida
@@ -32,7 +32,7 @@ reutiliza capacidades existentes de projetos, limites de subscrição e notifica
 |------------|--------------|
 | **ID do Caso de Uso** | UC-VID-001 |
 | **Nome** | Converter vídeo para outro formato ou resolução |
-| **Versão** | v1.0 |
+| **Versão** | v1.0.1 |
 | **Autor** | Beatriz Miranda |
 | **Data** | 2026-10-13 |
 | **Objetivo** | Permitir ao utilizador obter uma cópia do vídeo num formato ou resolução escolhidos |
@@ -59,7 +59,7 @@ reutiliza capacidades existentes de projetos, limites de subscrição e notifica
 |-----------|---------------|
 | FA1 – Apenas alteração de formato | O utilizador mantém a resolução original e escolhe apenas um formato diferente; o sistema conserva a resolução quando suportada. |
 | FA2 – Apenas alteração de resolução | O utilizador mantém o formato original e escolhe apenas uma resolução diferente; o sistema conserva o formato quando suportado. |
-| FA3 – Cancelamento | O utilizador cancela antes do início do processamento; o sistema não cria resultado nem consome a operação. |
+| FA3 – Cancelamento | O utilizador cancela antes do início do processamento; o sistema não cria resultado e liberta a quota eventualmente reservada. |
 
 ### 2.4 Exceções
 
@@ -92,15 +92,15 @@ reutiliza capacidades existentes de projetos, limites de subscrição e notifica
 | **ID** | **Assunção** |
 |--------|--------------|
 | A1 | O sistema já dispõe de autenticação, projetos, armazenamento, quotas e comunicação de estados de processamento. |
-| A2 | A primeira versão suporta pelo menos MP4 como formato de saída e resoluções até 1080p, desde que o ambiente de execução consiga processar o vídeo. |
+| A2 | A primeira versão suporta MP4 como formato de saída e resoluções até 1080p, desde que os formatos, codecs, duração e tamanho aprovados pelo grupo sejam respeitados. |
 | A3 | O processamento pode ser assíncrono e o utilizador não precisa de manter a página aberta. |
 
 ### 2.8 Questões em Aberto
 
 | **ID** | **Questão** |
 |-------------|-------------|
-| Q1 | [Decisão provisória — confirmar com o grupo em 2026-10-14] Quais são exatamente os formatos, codecs, durações e tamanhos máximos suportados na primeira versão? |
-| Q2 | [Decisão provisória — confirmar com o grupo em 2026-10-14] Que resoluções devem aparecer como opções predefinidas, além da resolução original? |
+| Q1 | Quais são exatamente os formatos, codecs, durações e tamanhos máximos suportados na primeira versão? |
+| Q2 | Que resoluções devem aparecer como opções predefinidas, além da resolução original? |
 
 ## 3. Utilização de agentes de IA
 
@@ -127,13 +127,13 @@ reutiliza capacidades existentes de projetos, limites de subscrição e notifica
 | REQ-VID-CONV-001 | O sistema deve permitir ao utilizador registado selecionar um vídeo da sua biblioteca e iniciar uma conversão. | F | Deve ter | NOVO | Passo 1; RN1 | Dado um utilizador autenticado com um vídeo acessível, quando seleciona “Converter”, então deve conseguir iniciar o pedido. |
 | REQ-VID-CONV-002 | O sistema deve apresentar apenas formatos e resoluções de saída válidos para o vídeo e para o perfil do utilizador. | F | Deve ter | ALT | Passo 1; RN5 | Dado um vídeo e um perfil, quando o utilizador seleciona “Converter”, então só devem ser apresentadas opções válidas. |
 | REQ-VID-CONV-003 | O sistema deve validar o formato e o codec do vídeo de entrada antes de iniciar o processamento. | F | Deve ter | NOVO | Passo 2; Exceção 1 | Dado um vídeo, quando o utilizador confirma a conversão, então o sistema deve validar o formato e o codec antes de aceitar o pedido. |
-| REQ-VID-CONV-004 | O sistema deve validar o tamanho e a duração do vídeo antes de iniciar o processamento. | NF (Capacidade) | Deve ter | NOVO | RN4 | Dado um vídeo, quando o utilizador confirma a conversão, então o sistema deve rejeitar o vídeo se exceder os limites definidos para o perfil. |
+| REQ-VID-CONV-004 | O sistema deve validar o tamanho e a duração do vídeo antes de iniciar o processamento. | F | Deve ter | NOVO | RN4 | Dado um vídeo, quando o utilizador confirma a conversão, então o sistema deve rejeitar o vídeo se exceder os limites definidos para o perfil. |
 | REQ-VID-CONV-005 | O sistema deve validar a quota diária do utilizador antes de iniciar o processamento. | F | Deve ter | ALT | RN4; Exceção 3 | Dado um utilizador sem quota disponível, quando confirma uma conversão, então o pedido não deve ser iniciado. |
 | REQ-VID-CONV-006 | O sistema deve informar o utilizador se o pedido de conversão foi aceite ou rejeitado. | F | Deve ter | NOVO | Passo 2 | Dado um pedido de conversão, quando termina a validação, então o sistema deve apresentar o resultado da aceitação ou rejeição. |
 | REQ-VID-CONV-007 | O sistema deve registar a operação depois de aceitar um pedido de conversão válido. | F | Deve ter | NOVO | Passo 3 | Dado um pedido aceite, quando o sistema inicia a operação, então deve ser criado um registo da conversão. |
 | REQ-VID-CONV-008 | O sistema deve colocar a operação no estado `em processamento` depois de aceitar o pedido. | F | Deve ter | NOVO | Passo 3 | Dado um pedido aceite, quando o processamento começa, então o estado apresentado deve ser `em processamento`. |
 | REQ-VID-CONV-009 | O sistema deve manter o vídeo original inalterado durante e após a conversão. | NF (Fiabilidade) | Deve ter | NOVO | Passo 3; Pós-condição de sucesso; RN3 | Dado um vídeo original, quando uma conversão termina com sucesso ou falha, então o conteúdo do original deve permanecer inalterado. |
-| REQ-VID-CONV-010 | O sistema deve processar o pedido de conversão de forma assíncrona quando a duração do processamento impedir uma resposta imediata. | F | Deveria ter | ALT | Passo 4; A3 | Dado um pedido aceite, quando o processamento demora mais do que a submissão, então o pedido deve continuar sem exigir que o utilizador mantenha a página aberta. |
+| REQ-VID-CONV-010 | O sistema deve processar o pedido de conversão de forma assíncrona quando a duração do processamento impedir uma resposta imediata. | F | Deve ter | ALT | Passo 4; A3 | Dado um pedido aceite, quando o processamento demora mais do que a submissão, então o pedido deve continuar sem exigir que o utilizador mantenha a página aberta. |
 | REQ-VID-CONV-011 | O sistema deve apresentar o estado atual da operação de conversão ao utilizador. | F | Deve ter | ALT | Passo 4; A3 | Dado uma operação registada, quando o utilizador consulta a operação, então o estado atual deve ser apresentado. |
 | REQ-VID-CONV-012 | O sistema deve apresentar a percentagem de progresso da conversão, atualizada pelo menos a cada 5 segundos enquanto o processamento estiver ativo. | NF (Usabilidade) | Deveria ter | ALT | Passo 4 | Dado um processamento ativo, quando decorrem 5 segundos, então a percentagem de progresso deve ser atualizada ou o estado deve indicar que o progresso não está disponível. |
 | REQ-VID-CONV-013 | O sistema deve permitir ao utilizador cancelar uma operação antes do início do processamento. | F | Deveria ter | NOVO | FA3 | Dado uma operação ainda não iniciada, quando o utilizador a cancela, então a operação deve ficar cancelada e não deve ser criado nenhum resultado. |
@@ -149,7 +149,7 @@ reutiliza capacidades existentes de projetos, limites de subscrição e notifica
 | REQ-VID-CONV-023 | O sistema deve apresentar uma mensagem de erro quando o processamento falhar. | F | Deve ter | NOVO | Exceção 4; Garantia mínima | Dado um processamento falhado, quando a operação termina, então o utilizador deve conseguir consultar a razão da falha. |
 | REQ-VID-CONV-024 | O sistema deve manter a resolução original quando o utilizador alterar apenas o formato e a resolução for suportada. | F | Deveria ter | NOVO | FA1 | Dado um pedido que altera apenas o formato, quando a conversão termina, então a resolução original deve ser mantida. |
 | REQ-VID-CONV-025 | O sistema deve manter o formato original quando o utilizador alterar apenas a resolução e o formato for suportado. | F | Deveria ter | NOVO | FA2 | Dado um pedido que altera apenas a resolução, quando a conversão termina, então o formato original deve ser mantido. |
-| REQ-VID-CONV-026 | O sistema deve rejeitar uma conversão quando o formato e a resolução escolhidos forem iguais aos do vídeo original, salvo quando o utilizador confirmar explicitamente a criação de uma cópia. | F | Poderia ter | NOVO | Caso de fronteira; Garantia mínima | Dado um vídeo e opções iguais às originais, quando o utilizador confirma, então o sistema deve rejeitar o pedido ou solicitar confirmação explícita de cópia. |
+| REQ-VID-CONV-026 | O sistema deve rejeitar uma conversão quando o formato e a resolução escolhidos forem iguais aos do vídeo original, salvo quando o utilizador confirmar explicitamente a criação de uma cópia. | F | Poderia ter | NOVO | Caso de fronteira; Garantia mínima | Dado um vídeo e opções iguais às originais, quando o utilizador confirma, então o sistema deve rejeitar o pedido ou solicitar confirmação explícita antes de criar uma cópia. |
 | REQ-VID-CONV-027 | O sistema deve concluir pelo menos 95% das conversões de vídeos até 2 minutos e 500 MB em até 2 minutos, em condições normais de execução. | NF (Desempenho) | Deveria ter | NOVO | A2; Pós-condição de sucesso | Dado um conjunto de testes com vídeos até 2 minutos e 500 MB, quando forem executadas conversões em condições normais, então pelo menos 95% devem terminar em até 2 minutos. |
 
 ### 4.2 Impacto no sistema existente
