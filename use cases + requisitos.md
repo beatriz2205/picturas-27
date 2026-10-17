@@ -75,11 +75,11 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | --- | --- |
 | RN1 | O ator tem de possuir uma sessão ativa e um projeto de destino. |
 | RN2 | Para o MVP, só são aceites ficheiros MP4 com vídeo codificado em H.264. A extensão do ficheiro, por si só, não é suficiente para confirmar o formato/codec. |
-| RN3 | O tamanho máximo proposto por ficheiro é 500 MB (500 × 1024 × 1024 bytes) e a duração máxima proposta é 10 minutos. O sistema deve validar ambos antes de confirmar a submissão. |
-| RN4 | As regras de submissão são iguais para os perfis registado Free e Premium. O carregamento de um vídeo não consome a quota diária de operações avançadas, que se aplica às ferramentas avançadas existentes, tal como a submissão de imagens. |
+| RN3 | O tamanho máximo por ficheiro é de 100 MB para o perfil Free e 500 MB para o perfil Premium; a duração máxima é de 60 segundos para o perfil Free e 10 minutos para o perfil Premium. O sistema deve validar ambos antes de confirmar a submissão. |
+| RN4 | O carregamento de um vídeo não consome a quota diária de operações avançadas. Os limites de upload diferem por perfil: Free (100 MB/60 segundos) e Premium (500 MB/10 minutos). |
 | RN5 | A submissão associa o ficheiro original a um único projeto. Recortar, converter, transcodificar, gerar miniaturas e aplicar ferramentas ao vídeo estão fora do âmbito deste caso de uso. |
 | RN6 | Cada ação de submissão confirmada cria uma entrada distinta no projeto; carregar um vídeo novo não substitui automaticamente um vídeo já existente. A repetição de uma submissão cuja confirmação não chegou ao utilizador não cria entrada nova, ao contrário de uma nova submissão deliberada do mesmo ficheiro (mesmo ficheiro, nova ação, nova entrada). |
-| RN7 | Os limites de 500 MB e 10 minutos são limites funcionais propostos para o MVP, não limites atualmente verificados no carregamento de imagens. A equipa deve confirmá-los antes da implementação. |
+| RN7 | Os limites de 100 MB/60 segundos para Free e 500 MB/10 minutos para Premium são limites funcionais do MVP e devem ser validados antes da implementação. |
 | RN8 | O sistema pode validar o ficheiro antes ou durante o envio, mas nunca associa ao projeto um ficheiro que não passou todas as validações. |
 
 ### 4.1.7 Assunções
@@ -88,16 +88,16 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | --- | --- |
 | A1 | O perfil do utilizador não altera o direito de submeter vídeo. Esta decisão estende ao vídeo o modelo de acesso proposto para os projetos existentes. |
 | A2 | O formato MP4/H.264 é escolhido para reduzir a variedade de formatos a validar no MVP. |
-| A3 | Os limites iniciais de 500 MB por ficheiro e 10 minutos de duração são valores de trabalho para permitir testes funcionais; não foram definidos no código existente e carecem de validação pela equipa. |
+| A3 | Os limites de 100 MB/60 segundos para Free e 500 MB/10 minutos para Premium são valores de trabalho para permitir testes funcionais; não foram definidos no código existente e carecem de validação pela equipa. |
 | A4 | Esta funcionalidade não processa o vídeo nem exige pré-visualização; a confirmação significa apenas que o ficheiro foi validado, guardado e associado ao projeto. |
-| A5 | No MVP não há quotas de armazenamento por perfil para vídeos. Os limites de tamanho e duração por ficheiro não equivalem a uma quota total de armazenamento. |
+| A5 | No MVP existem limites de armazenamento por perfil para vídeos: 2 GB para Free e 50 GB para Premium. Os limites de tamanho e duração por ficheiro são independentes da quota total de armazenamento. |
 
 ### 4.1.8 Questões em Aberto
 
 | **ID** | **Questão** | **Resolução** |
 | --- | --- | --- |
 | Q1 | Devem ser aceites outros formatos de vídeos ou codecs, para além de MP4/H.264? | **Resolvida**: não no MVP; MP4/H.264/AAC é a matriz de referência (secção 4.6). |
-| Q2 | Depois do MVP, devem ser impostos diferentes limites máximos de tamanho e duração dos vídeos aos diferentes perfis de utilizador? | **Resolvida para o MVP**: não; os limites são comuns. A diferenciação fica para uma evolução posterior. |
+| Q2 | Depois do MVP, devem ser impostos diferentes limites máximos de tamanho e duração dos vídeos aos diferentes perfis de utilizador? | **Resolvida para o MVP**: a diferenciação já se aplica: Free (100 MB/60 segundos/1080p) e Premium (500 MB/10 minutos/4K). |
 | Q3 | Depois do MVP, será necessária uma quota total de armazenamento ou um número máximo de vídeos por projeto? | **Resolvida para o MVP**: não existe quota de armazenamento por perfil; uma política posterior permanece fora do MVP. |
 | Q4 | Deve ser permitida a pré-visualização do vídeo? | **Resolvida**: não faz parte deste caso de uso; a pré-visualização é tratada nas ferramentas de processamento. |
 | Q5 | Como devem os vídeos ser apresentados no projeto e deve ser permitida a remoção do vídeo nesta funcionalidade? | **Resolvida para o MVP**: o vídeo é apresentado como recurso independente; a remoção segue a gestão normal de projetos e não é implementada pelo upload. |
@@ -119,9 +119,9 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **Data** | 2026-10-14 |
 | **Objetivo** | Permitir ao utilizador criar um novo vídeo a partir de um intervalo temporal (início–fim) de um vídeo existente num dos seus projetos, escolhendo o formato e a resolução de saída, e acompanhar o processamento até à conclusão. |
 | **Âmbito** | Módulo de vídeo do PictuRAS: nova ferramenta de recorte temporal (microsserviço de processamento ligado à fila RabbitMQ), Project Service (projetos e orquestração de ferramentas), WebSocket Gateway (progresso em tempo real), serviços de utilizadores e subscrições (plano e quota diária), armazenamento de objetos e frontend (editor e barra de ferramentas). |
-| **Ator Principal** | Utilizador Registado. No MVP, os perfis Free e Premium seguem os mesmos limites funcionais e a mesma prioridade. |
+| **Ator Principal** | Utilizador Registado. O perfil Free e o perfil Premium seguem o mesmo fluxo, mas têm limites, quota e prioridade de fila diferentes. |
 | **Stakeholders e Interesses** | - **Utilizador**: quer obter rapidamente só o excerto pretendido, saber em que ponto está o pedido e não perder o vídeo original<br>- **Proprietário do Sistema**: quer controlar o custo computacional e de armazenamento através de quotas e limites por plano, e incentivar a subscrição Premium<br>- **Equipa de Desenvolvimento**: quer validar a cadeia completa de processamento assíncrono (fila, estados, falhas, cancelamento) com uma operação bem delimitada, reutilizando a arquitetura existente<br>- **Operações / Infraestrutura**: quer evitar saturação da fila e dos *workers*, e tarefas órfãs ou ficheiros parciais por limpar |
-| **Pré-condições** | - O utilizador tem sessão iniciada com perfil Free ou Premium<br>- O vídeo pertence a um projeto do utilizador, com carregamento concluído e num formato/codec suportado<br>- A duração do vídeo não excede os limites comuns do MVP (RN1)<br>- A quota diária de operações do utilizador não está esgotada (RN3) |
+| **Pré-condições** | - O utilizador tem sessão iniciada com perfil Free ou Premium<br>- O vídeo pertence a um projeto do utilizador, com carregamento concluído e num formato/codec suportado<br>- A duração do vídeo não excede o limite do respetivo perfil (RN1)<br>- A quota diária de operações do utilizador não está esgotada (RN3) |
 | **Trigger** | O utilizador seleciona um vídeo num projeto e escolhe a ferramenta **Recortar** |
 
 ### 4.2.2 Fluxo Principal
@@ -151,7 +151,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | FA3 – Instante final omitido | No passo 3, o utilizador define apenas o instante inicial → O sistema assume como instante final o fim do vídeo e mostra-o no resumo |
 | FA4 – Nome já existente | No passo 4, já existe um ficheiro com o nome escolhido no projeto → O sistema sugere um nome alternativo (por exemplo, com sufixo numérico) e pede confirmação antes de avançar |
 | FA5 – Limite de tarefas simultâneas atingido | No passo 6, o utilizador já tem o número máximo de tarefas ativas (RN6) → O sistema aceita o pedido, mas mantém a tarefa no estado **Em espera** até uma tarefa anterior terminar, informando o utilizador |
-| FA6 – Perfil do utilizador | Em qualquer passo, o ator tem perfil Free ou Premium → O sistema aplica os limites comuns do MVP e a prioridade comum; diferenças entre planos ficam adiadas |
+| FA6 – Perfil do utilizador | Em qualquer passo, o ator tem perfil Free ou Premium → o sistema aplica os limites e a prioridade correspondentes ao perfil: Free até 1080p, uma tarefa ativa e fila normal; Premium até 4K, três tarefas ativas e fila prioritária |
 | FA7 – Regresso após ausência | O utilizador fecha a aplicação no passo 9 e regressa mais tarde → O sistema mostra, no projeto, o estado atual de cada tarefa (a processar, concluída, falhada ou cancelada) e apresenta a notificação pendente, mesmo que o utilizador não estivesse ligado quando o evento ocorreu |
 | FA8 – Pedido idêntico duplicado | No passo 5, existe uma tarefa ativa do mesmo utilizador, sobre o mesmo vídeo, com o mesmo intervalo e as mesmas opções → O sistema informa que o pedido já está em curso e apresenta essa tarefa, sem criar outra |
 
@@ -161,10 +161,10 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |--------------|------------------------------|
 | Utilizador sem sessão tenta recortar um vídeo (RN12) | A ferramenta **Recortar** aparece indisponível, com a indicação *“Inicie sessão para recortar vídeos”* e acesso ao registo/login. Não é criada nenhuma tarefa |
 | **(Vídeo)** Formato ou codec do vídeo original não suportado | No passo 2, a ferramenta **Recortar** fica indisponível, com a indicação *“Formato de vídeo não suportado para recorte”* e a lista dos formatos suportados. Não é criada nenhuma tarefa |
-| **(Vídeo)** Duração do vídeo ou do intervalo selecionado excede o limite do plano (RN1) | Impede o avanço nos passos 3 ou 5 com a mensagem *“Excede o limite do seu plano (X min)”*, indicando o limite e a alternativa Premium. Não é criada nenhuma tarefa |
+| **(Vídeo)** Duração do vídeo ou do intervalo selecionado excede o limite do perfil (RN1) | Impede o avanço nos passos 3 ou 5 com a mensagem *“Excede o limite do seu plano (X min)”*, indicando o limite aplicável. Não é criada nenhuma tarefa |
 | Intervalo inválido (início ≥ fim, instante fora da duração do vídeo ou duração inferior ao mínimo, RN2) | Marca o campo em erro, mostra a mensagem correspondente e mantém o botão **Iniciar recorte** desativado |
-| **(Vídeo)** Quota diária de operações esgotada (RN3) | No passo 2 ou 5, o sistema não cria a tarefa e informa *“Quota diária esgotada”*, indicando quando é reposta e a alternativa Premium |
-| **(Vídeo)** Falha a meio do processamento (erro do *worker*, ficheiro corrompido a meio da leitura, falta de recursos) | O sistema tenta automaticamente uma segunda execução (RN9). Se voltar a falhar, passa a tarefa a **Falhou**, elimina o resultado parcial, não consome quota, mantém o original inalterado e notifica o utilizador com a mensagem *“Não foi possível recortar o vídeo. Tente novamente.”* |
+| **(Vídeo)** Quota diária de operações esgotada (RN3) | No passo 2 ou 5, o sistema não cria a tarefa e informa *“Quota diária esgotada”*. No Free aplica-se o limite diário de 5 operações; no Premium não há limite diário de operações de vídeo. |
+| **(Vídeo)** Falha a meio do processamento (erro do *worker*, ficheiro corrompido a meio da leitura, falta de recursos) | O sistema passa a tarefa a **Falhou**, elimina o resultado parcial, não consome quota, mantém o original inalterado e notifica o utilizador com a mensagem *“Não foi possível recortar o vídeo. Tente novamente.”*. Uma nova tentativa tem de ser iniciada explicitamente pelo utilizador. |
 | **(Vídeo)** Tempo máximo de processamento excedido (RN9) | Interrompe a tarefa e trata-a como falha a meio do processamento (elimina o parcial, não consome quota, notifica o utilizador) |
 | Espaço de armazenamento do utilizador insuficiente para guardar o resultado | No passo 5, rejeita o pedido com a indicação do espaço necessário. Se o problema surgir no passo 11, a tarefa passa a **Falhou**, sem consumir quota, e o resultado é eliminado |
 | O vídeo original (ou o projeto) é removido pelo utilizador enquanto a tarefa está em fila ou a processar | O sistema cancela a tarefa (como em FA1/FA2) e informa o utilizador de que o vídeo de origem deixou de existir |
@@ -182,12 +182,12 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 
 | **ID** | **Regra** |
 |--------|-----------|
-| RN1 | Duração máxima do vídeo de origem: 10 minutos para os perfis Free e Premium no MVP |
+| RN1 | Duração máxima do vídeo de origem: 60 segundos para o perfil Free e 10 minutos para o perfil Premium |
 | RN2 | O intervalo é definido por instantes de início e fim, com 0 ≤ início < fim ≤ duração do vídeo; duração mínima do excerto de 1 s |
-| RN3 | Cada recorte aceite reserva uma operação da quota comum; a operação só é consumida após sucesso e tarefas rejeitadas, falhadas ou canceladas antes do consumo não contam |
+| RN3 | Cada recorte aceite reserva uma operação; o perfil Free está limitado a 5 operações diárias e o perfil Premium não tem limite diário de operações de vídeo. A operação só é consumida após sucesso e tarefas rejeitadas, falhadas ou canceladas antes do consumo não contam |
 | RN4 | O recorte é feito ao fotograma: o instante pedido é aproximado ao fotograma mais próximo |
-| RN5 | No MVP, o formato de saída é MP4 (H.264/AAC). A resolução de saída nunca excede a do vídeo original (não há *upscaling*) nem 1080p; os perfis Free e Premium seguem o mesmo limite |
-| RN6 | O limite de tarefas ativas e a prioridade da fila são comuns aos perfis Free e Premium no MVP; o valor operacional é o definido na capacidade da infraestrutura |
+| RN5 | No MVP, o formato de saída é MP4 (H.264/AAC). A resolução de saída nunca excede a do vídeo original; o perfil Free está limitado a 1080p e o Premium pode escolher até 4K |
+| RN6 | Tarefas ativas em simultâneo por utilizador: 1 no perfil Free e 3 no perfil Premium. As tarefas Premium são colocadas na fila prioritária |
 | RN7 | A duração do vídeo resultante deve corresponder ao intervalo pedido com tolerância máxima de ±0,5 s |
 | RN8 | O resultado é sempre um novo vídeo, guardado no mesmo projeto; o vídeo original nunca é alterado nem substituído |
 | RN9 | Tempo máximo de processamento por tarefa: 15 min; em caso de falha, a tarefa passa a **Falhou** sem retoma automática (decisão transversal, secção 4.6) |
@@ -203,7 +203,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |--------|--------------|
 | A1 | O vídeo original está integralmente armazenado e acessível ao serviço de processamento no momento do pedido |
 | A2 | A nova ferramenta pode ser integrada seguindo o padrão das ferramentas existentes (microsserviço que consome a sua fila RabbitMQ e publica o resultado e o progresso), reutilizando o WebSocket Gateway para o progresso |
-| A3 | O mecanismo atual de quota diária pode ser estendido a operações de vídeo sem alterar o modelo de planos; no MVP aplica-se a política comum aos perfis Free e Premium |
+| A3 | O mecanismo atual de quota diária pode ser estendido a operações de vídeo sem alterar o modelo de planos; aplica-se o limite de 5 operações ao Free e não há limite diário de operações de vídeo para Premium |
 | A4 | Os limites numéricos de RN1, RN5, RN6, RN9, RN13 e RN14 são valores de trabalho do MVP, a confirmar com o docente/proprietário do sistema; não há diferenciação de quota por perfil nesta versão |
 | A5 | O estado das tarefas é guardado de forma persistente (por exemplo, no Project Service), de modo que o FA7 funcione; não se assume que os eventos atuais do WebSocket sejam guardados |
 | A6 | O formato de entrada de referência do MVP é MP4 com vídeo H.264/AVC e áudio AAC |
@@ -214,11 +214,11 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 
 | **ID** | **Questão** | **Resolução** |
 |--------|-------------|----------------|
-| Q1 | Os limites de duração, quota e tarefas simultâneas (RN1, RN3, RN6) estão corretos para cada plano? Qual é o limite diário atual do plano Premium? | **Resolvida para o MVP**: os limites são comuns aos perfis Free e Premium; a diferenciação fica adiada. |
-| Q2 | Uma operação de vídeo conta como uma operação da quota partilhada com as imagens ou tem quota própria? E deve pesar o mesmo que uma operação sobre uma imagem? | **Resolvida para o MVP**: cada tarefa aceite reserva uma operação da quota comum; rejeições, falhas e cancelamentos antes do consumo não contam. |
+| Q1 | Os limites de duração, quota e tarefas simultâneas (RN1, RN3, RN6) estão corretos para cada plano? Qual é o limite diário atual do plano Premium? | **Resolvida para o MVP**: Free: 60 segundos, 5 operações/dia e 1 tarefa ativa; Premium: 10 minutos, sem limite diário de operações de vídeo e 3 tarefas ativas. |
+| Q2 | Uma operação de vídeo conta como uma operação da quota partilhada com as imagens ou tem quota própria? E deve pesar o mesmo que uma operação sobre uma imagem? | **Resolvida para o MVP**: cada tarefa aceite reserva uma operação; Free usa a quota partilhada de 5 operações/dia e Premium não tem limite diário de operações de vídeo. |
 | Q3 | O perfil Anónimo deve ter acesso a uma versão limitada desta funcionalidade (por exemplo, vídeos muito curtos)? | **Resolvida**: não; é necessária sessão iniciada. |
 | Q4 | O utilizador deve poder encadear, num mesmo pedido, o recorte com outras ferramentas existentes (pipeline ou processamento em lote)? | **Resolvida**: fora do MVP; operações de vídeo são independentes (secção 4.6). |
-| Q5 | Os vídeos devem ficar no mesmo armazenamento das imagens ou num armazenamento próprio, dado o tamanho? Há um limite de armazenamento por conta? | **Resolvida para o MVP**: usa-se o armazenamento de objetos existente e não há quota por perfil. |
+| Q5 | Os vídeos devem ficar no mesmo armazenamento das imagens ou num armazenamento próprio, dado o tamanho? Há um limite de armazenamento por conta? | **Resolvida para o MVP**: usa-se o armazenamento de objetos existente; o limite é 2 GB para Free e 50 GB para Premium. |
 | Q6 | As ferramentas atuais suportam cancelamento e prioridade na fila? Se não, o cancelamento (FA1, FA2) e a fila prioritária (FA6) implicam alterar a arquitetura existente? | **Resolvida para o MVP**: o cancelamento é best effort e não há prioridade diferenciada por perfil; a capacidade da fila deve ser validada na implementação. |
 | Q7 | Deve existir recorte sem re-codificação (mais rápido, mas só em fotogramas-chave) como alternativa ao recorte preciso ao fotograma? | Em aberto para uma evolução posterior; não faz parte do MVP. |
 | Q8 | Por quanto tempo devem ser conservadas as tarefas concluídas, falhadas ou canceladas no histórico do projeto? | Em aberto; a retenção de registos está definida no Capítulo 5, mas a política final requer confirmação. |
@@ -296,15 +296,15 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **ID** | **Assunção** |
 |--------|--------------|
 | A1 | O sistema já dispõe de autenticação, projetos, armazenamento, quotas e comunicação de estados de processamento. |
-| A2 | A primeira versão suporta MP4 como formato de saída e resoluções até 1080p, desde que os formatos, codecs, duração e tamanho aprovados pelo grupo sejam respeitados. |
+| A2 | A primeira versão suporta MP4/H.264/AAC; o Free pode escolher até 1080p e o Premium até 4K, respeitando os limites de tamanho e duração do respetivo perfil. |
 | A3 | O processamento pode ser assíncrono e o utilizador não precisa de manter a página aberta. |
 
 ### 4.3.8 Questões em Aberto
 
 | **ID** | **Questão** | **Resolução** |
 |-------------|-------------|-------------|
-| Q1 | Quais são exatamente os formatos, codecs, durações e tamanhos máximos suportados na primeira versão? | **Resolvida para o MVP**: MP4/H.264/AAC, 500 MB, 10 minutos e 1080p (secção 4.6). |
-| Q2 | Que resoluções devem aparecer como opções predefinidas, além da resolução original? | **Resolvida para o MVP**: a resolução original ou uma resolução inferior, sem exceder 1080p. |
+| Q1 | Quais são exatamente os formatos, codecs, durações e tamanhos máximos suportados na primeira versão? | **Resolvida para o MVP**: MP4/H.264/AAC; Free: 100 MB/60 segundos/1080p; Premium: 500 MB/10 minutos/4K (secção 4.6). |
+| Q2 | Que resoluções devem aparecer como opções predefinidas, além da resolução original? | **Resolvida para o MVP**: a resolução original ou uma resolução inferior, sem exceder 1080p no Free ou 4K no Premium. |
 
 
 ### 4.4 UC-VID-004 — Aplicar filtros visuais e ajustes de cor
@@ -373,14 +373,14 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **ID** | **Regra** |
 |--------|-----------|
 | **RN1** | Os valores de brilho, contraste e saturação são indicados numa escala de -100 a +100, em que 0 corresponde ao valor original (ver A18). |
-| **RN2** | A duração máxima do vídeo processado é de 10 minutos para utilizadores com perfil registado e de até 10 minutos para utilizadores com perfil premium. |
-| **RN3** | O tamanho máximo do ficheiro de vídeo de entrada é de 500 MB para os perfis Free e Premium no MVP. |
+| **RN2** | A duração máxima do vídeo processado é de 60 segundos para o perfil Free e de 10 minutos para o perfil Premium. |
+| **RN3** | O tamanho máximo do ficheiro de vídeo de entrada é de 100 MB para o perfil Free e de 500 MB para o perfil Premium. |
 | **RN4** | A operação de aplicação de filtros gera sempre um novo recurso independente no armazenamento e na biblioteca; o vídeo original nunca é substituído, truncado ou modificado. |
 | **RN5** | O formato de exportação gerado pelo sistema é obrigatoriamente contentor MP4 com codecs de vídeo H.264 e de áudio AAC. |
-| **RN6** | Cada tarefa de filtragem de vídeo reserva 1 unidade da quota diária comum no momento da submissão; a dedução só é consolidada após o sucesso; cancelamentos ou falhas estornam integralmente a unidade. |
+| **RN6** | Cada tarefa de filtragem de vídeo reserva 1 unidade no momento da submissão; a dedução só é consolidada após o sucesso. O perfil Free partilha o limite diário de 5 operações das ferramentas avançadas; o Premium não tem limite diário de operações de vídeo. Cancelamentos ou falhas estornam integralmente a unidade. |
 | **RN7** | O novo vídeo só é publicado e disponibilizado para reprodução e descarregamento após aprovação na validação de integridade pós-processamento. |
-| **RN8** | Cada utilizador está sujeito ao limite comum de tarefas de processamento de vídeo ativas definido para o MVP. |
-| **RN9** | A resolução máxima do vídeo processado é 1920 × 1080 px para os perfis Free e Premium no MVP. |
+| **RN8** | Cada utilizador pode ter, no máximo, 1 tarefa de processamento de vídeo ativa no perfil Free e 3 tarefas no perfil Premium. |
+| **RN9** | A resolução máxima do vídeo processado é 1920 × 1080 px para o perfil Free e 3840 × 2160 px para o perfil Premium. |
 
 ### 4.4.7 Assunções
 
@@ -391,15 +391,15 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **A3** | O armazenamento de objetos (*Object Storage*) suporta o aumento de volume gerado pela persistência dos novos vídeos criados. |
 | **A4** | A interface do utilizador consegue apresentar uma pré-visualização aproximada dos efeitos em tempo real recorrendo a filtros no cliente. |
 | **A5** | A combinação da filtragem de vídeo com outras ferramentas (rotação, recorte, IA) e o processamento em lote (*batch*) de múltiplos vídeos estão fora do âmbito do MVP da Fase 1. O encadeamento interno de `brightness`, `contrast` e `saturation` é reutilizado. *(revista na v2.0)* |
-| **A6** | O limite comum de 10 minutos e 500 MB assume vídeos até 1080p em H.264; o limite que for atingido primeiro determina a rejeição. |
+| **A6** | Os limites de 60 segundos/100 MB/1080p para Free e 10 minutos/500 MB/4K para Premium assumem vídeos H.264; o limite que for atingido primeiro determina a rejeição. |
 | **A7** | Os alvos de desempenho são medidos num ambiente de referência: execução local via `docker-compose`, *worker* com 1 vCPU e 2 GB de RAM, e vídeo de teste 1080p a 30 fps em H.264. |
 | **A8** | O tempo de confirmação da submissão (≤ 2 s) não inclui o carregamento do vídeo, que já está na biblioteca (pré-condição do UC). |
 | **A9** | O limite de 50 ms de dessincronização áudio/vídeo fica abaixo do limiar de deteção indicado na Recomendação ITU-R BT.1359 (≈ 45 ms com o áudio adiantado, ≈ 125 ms com o áudio atrasado), arredondado. |
 | **A10** | O ambiente MVP dispõe de 5 réplicas de *worker* de vídeo, o que sustenta 5 tarefas em simultâneo com espera em fila ≤ 30 s. |
 | **A11** | Uma validade de 15 min é suficiente para iniciar a reprodução ou o *download*; quando expira, o cliente pede um novo URL. |
 | **A12** | O canal WebSocket existente (`wsGateway`, evento `process-update`) consegue transportar atualizações de progresso de vídeo com a cadência exigida. |
-| **A13** | Cada tarefa de filtragem de vídeo conta como **1 operação**, independentemente do número de fotogramas e de ajustes; a diferenciação de quota por perfil fica adiada. |
-| **A14** | Não existem quotas de armazenamento por perfil no MVP. Os valores de 2 GB para o perfil registado e 50 GB para o perfil premium, presentes no exercício original, ficam adiados e não constituem uma restrição desta versão. |
+| **A13** | Cada tarefa de filtragem de vídeo conta como **1 operação**, independentemente do número de fotogramas e de ajustes; o perfil Free partilha o limite diário de 5 operações e o Premium não tem limite diário de operações de vídeo. |
+| **A14** | O limite de armazenamento por conta é de 2 GB para o perfil Free e 50 GB para o perfil Premium; a verificação ocorre antes de publicar um novo resultado. |
 | **A15** | Codecs de áudio aceites na entrada: AAC, MP3, Opus e AC-3. Vídeos sem faixa de áudio são aceites e produzem um MP4 sem áudio. |
 | **A16** | "Falha transitória" é a terminação abrupta do *worker*, a perda de ligação ao *broker* ou ao armazenamento, ou o *timeout*. Nenhuma falha é repetida automaticamente no MVP (decisão transversal, secção 4.6). |
 | **A17** | Estimativa do débito do MVP: a filtragem reutiliza as ferramentas de imagem existentes, que trocam cada fotograma via RabbitMQ e armazenamento de objetos. Estima-se ≈ 0,3 s de CPU por fotograma 1080p para os 3 ajustes, ou seja ≈ 10 min para os 1800 fotogramas de um vídeo de 60 s a 30 fps. O valor tem de ser confirmado por medição no protótipo. |
@@ -412,7 +412,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **Q1** | A pré-visualização dos filtros na interface deve ser gerada localmente no navegador ou através de um fotograma processado pelo servidor? | **Resolvida para o MVP**: pré-visualização aproximada no cliente, conforme A4. |
 | **Q2** | O utilizador deve poder guardar combinações de ajustes manuais como estilos personalizados? | **Resolvida para o MVP**: não; podem ser reutilizados *presets* existentes, mas guardar novos estilos fica fora do âmbito. |
 | **Q3** | Devem ser disponibilizados outros formatos de saída além de MP4/H.264 no MVP? | Fechada: só MP4/H.264/AAC no MVP (RN5) |
-| **Q4** | Os ficheiros de vídeo na biblioteca do utilizador devem ter prazo de expiração automático ou persistência indefinida sujeita ao limite de espaço da conta? | **Resolvida no MVP**: não há quota de armazenamento por perfil; os recursos persistem durante a vida do projeto, ficando uma política de retenção posterior para decisão do grupo. |
+| **Q4** | Os ficheiros de vídeo na biblioteca do utilizador devem ter prazo de expiração automático ou persistência indefinida sujeita ao limite de espaço da conta? | **Resolvida no MVP**: os recursos persistem durante a vida do projeto, sujeitos ao limite de armazenamento do perfil: 2 GB para Free e 50 GB para Premium. |
 
 ---
 
@@ -465,7 +465,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |--------------|------------------------------|
 | O utilizador não está autenticado ou não tem permissão de edição no projeto. | Rejeita o pedido sem guardar o vídeo nem reservar operações e apresenta um erro de autenticação/autorização. |
 | O formato, codec, tamanho ou duração do vídeo não é suportado. | Rejeita o ficheiro antes de o enfileirar, explica a restrição aplicável e mantém o projeto e a quota inalterados. |
-| A quota diária não é suficiente. | Não inicia a execução, não publica mensagem para o worker e informa que o limite diário foi atingido. A regra é comum aos perfis Free e Premium no MVP. |
+| A quota diária não é suficiente. | Não inicia a execução, não publica mensagem para o worker e informa que o limite diário foi atingido. No perfil Free aplica-se o limite de 5 operações; o Premium não tem limite diário de operações de vídeo. |
 | O armazenamento, RabbitMQ ou worker não está disponível. | Regista o erro, marca a execução como falhada, remove os recursos temporários que tenham sido criados e devolve as operações reservadas que ainda não tenham sido consumidas. |
 | O worker falha durante a extração ou deteção de um fotograma. | Termina a execução com estado **falhado**, não disponibiliza um resultado incompleto como resultado final, conserva o vídeo original e apresenta uma mensagem que permite tentar novamente. |
 | O utilizador inicia uma nova execução ou cancela a execução atual antes da conclusão. | O sistema invalida a execução anterior através do mecanismo de tokens existente e só aceita como resultado final uma execução que continue a ser a ativa. |
@@ -484,7 +484,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **RN1** | Apenas utilizadores autenticados com permissão de edição podem iniciar ou cancelar uma execução de deteção num projeto. |
 | **RN2** | `people_ai` deteta apenas a classe pessoa; `obj_ai` deteta as classes de objetos suportadas pelo modelo YOLO configurado. |
 | **RN3** | Cada deteção deve incluir, no mínimo, a classe, a confiança, o índice ou instante do fotograma e uma caixa delimitadora em coordenadas normalizadas. |
-| **RN4** | A execução de ferramentas de IA está sujeita à quota diária comum aos perfis Free e Premium no MVP. Uma execução que combine `people_ai` e `obj_ai` conta como uma operação aceite. |
+| **RN4** | A execução de ferramentas de IA está sujeita à quota diária de 5 operações no perfil Free; o perfil Premium não tem limite diário de operações de vídeo. Uma execução que combine `people_ai` e `obj_ai` conta como uma operação aceite. |
 | **RN5** | O vídeo original é imutável. Os resultados são armazenados como artefactos separados e devem manter uma referência à execução que os produziu. |
 | **RN6** | Uma execução só pode ser considerada concluída quando todos os fotogramas e ferramentas selecionadas terminarem com sucesso. |
 | **RN7** | O processamento deve permanecer assíncrono: o pedido web não deve esperar pela duração total do vídeo; o progresso e o estado final devem ser comunicados por eventos do WebSocket Gateway. |
@@ -504,7 +504,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 
 | **ID** | **Questão** | **Resolução** |
 |--------|-------------|----------------|
-| **Q1** | Quais são exatamente os formatos, codecs, tamanhos máximos e durações máximas suportados na primeira versão? | **Resolvida para o MVP**: MP4/H.264/AAC, 500 MB, 10 minutos e 1080p (secção 4.6). |
+| **Q1** | Quais são exatamente os formatos, codecs, tamanhos máximos e durações máximas suportados na primeira versão? | **Resolvida para o MVP**: MP4/H.264/AAC; Free: 100 MB/60 segundos/1080p; Premium: 500 MB/10 minutos/4K (secção 4.6). |
 | **Q2** | A quota deve ser debitada por vídeo, por ferramenta selecionada, por duração ou por número de fotogramas processados? | **Resolvida para o MVP**: uma operação por execução aceite; `people_ai` e `obj_ai` combinados contam como uma operação. |
 | **Q3** | O resultado estruturado deve ser JSON, CSV ou ambos, e qual será o contrato de versionamento desse formato? | **Resolvida para o MVP**: JSON obrigatório; versionamento do contrato será definido na implementação. |
 | **Q4** | O vídeo anotado faz parte da primeira entrega ou fica limitado ao resultado estruturado? | **Resolvida**: JSON é obrigatório; vídeo anotado é opcional e não bloqueia a conclusão (secção 4.6). |
@@ -519,11 +519,13 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 
 | Tema | Decisão comum |
 |---|---|
-| Perfis | Todas as operações de vídeo exigem autenticação e permissão no projeto; os limites são comuns no MVP. |
+| Perfis | Todas as operações de vídeo exigem autenticação e permissão no projeto. Free e Premium mantêm limites, quota, armazenamento e prioridade de fila diferentes. |
 | Formato | MP4/H.264/AVC com AAC é a matriz de referência; WebM/MKV ficam adiados. |
-| Limites | 500 MB, 10 minutos e 1080p no MVP. |
+| Limites | Free: 100 MB, 60 segundos e 1080p; Premium: 500 MB, 10 minutos e 4K. O limite que for atingido primeiro determina a rejeição. |
 | Estados | `queued`, `processing`, `completed`, `failed`, `cancelled`; a interface pode traduzir os estados. |
-| Quota | Upload não conta; cada tarefa aceite conta uma operação; rejeição não conta; cancelamento/falha antes de consumo estorna a reserva. |
+| Quota | Upload não conta. Free: 5 operações diárias partilhadas com as ferramentas avançadas; Premium: sem limite diário de operações de vídeo. Cada tarefa aceite reserva uma operação; rejeição, cancelamento ou falha antes do consumo estorna a reserva. |
+| Armazenamento | Free: 2 GB; Premium: 50 GB. O original e os resultados ocupam o armazenamento do respetivo projeto. |
+| Concorrência | Free: uma tarefa ativa e fila normal; Premium: três tarefas ativas e fila prioritária. |
 | Resultados | O original nunca é substituído; os resultados são recursos independentes e só são publicados após validação. |
 | Retries | O upload pode ser repetido explicitamente pelo utilizador após uma falha; as tarefas de processamento não têm retry automático no MVP. |
 | Encadeamento/lote | Fora do MVP; as operações de vídeo são independentes das ferramentas e lotes de imagem. |
@@ -545,7 +547,7 @@ a extensão altera ou expande o comportamento do elemento da baseline indicado.
 | `REQ-VID-COM-006` | O sistema deve usar os estados `queued`, `processing`, `completed`, `failed` e `cancelled`. | Must | NOVO | UC-VID-002—005 | Define um ciclo de vida comum e verificável para todas as operações assíncronas de vídeo. | Dado qualquer tarefa, quando o estado muda, então assume apenas um dos valores: queued, processing, completed, failed ou cancelled. |
 | `REQ-VID-COM-007` | O sistema deve comunicar estado e progresso disponível apenas a utilizadores autorizados. | Should | ALT (`RNF43`, `RNF44`) | UC-VID-002—005 | Protege o estado e o progresso de operações contra acesso não autorizado. | Dado utilizador sem permissão no projeto, quando consulta o estado ou progresso de uma tarefa, então o sistema rejeita o pedido. |
 | `REQ-VID-COM-008` | O sistema deve permitir cancelar tarefas não finais quando o worker o permitir. | Should | NOVO | UC-VID-002/003/004/005 | Permite recuperar recursos quando o utilizador desiste antes de consumir processamento. | Dado tarefa em estado queued, quando o utilizador a cancela, então a tarefa fica cancelled e a quota reservada é estornada. |
-| `REQ-VID-COM-009` | O sistema deve reservar uma operação ao aceitar uma tarefa, não contar rejeições e estornar reserva não consumida. | Must | ALT (`RNF48`) | Todos | Liga as operações de vídeo ao modelo de quota existente de forma verificável. | Dado pedido aceite, quando a quota é reservada; dado pedido rejeitado, quando o sistema responde — então apenas o pedido aceite conta para a quota. |
+| `REQ-VID-COM-009` | O sistema deve reservar uma operação ao aceitar uma tarefa, aplicar o limite diário de 5 operações ao perfil Free, não limitar operações de vídeo do Premium, não contar rejeições e estornar reserva não consumida. | Must | ALT (`RNF48`) | Todos | Liga as operações de vídeo ao modelo de quota existente, preservando a diferenciação dos planos. | Dado pedido Free que exceda 5 operações ou pedido rejeitado, quando o sistema responde, então não cria tarefa; dado pedido Premium válido, então não é bloqueado por quota diária de vídeo. |
 | `REQ-VID-COM-010` | O sistema deve manter o original inalterado e guardar cada resultado como recurso independente associado ao projeto e origem. | Must | ALT (`UC04`, `RNF45`) | UC-VID-002/003/004/005 | Garante integridade dos ativos e rastreabilidade dos resultados. | Dado processamento concluído, quando o utilizador consulta o projeto, então o original está inalterado e o resultado aparece como recurso independente associado ao original. |
 | `REQ-VID-COM-011` | O sistema deve remover ou ocultar artefactos parciais e temporários após sucesso, falha ou cancelamento. | Must | NOVO | Todos | Impede que ficheiros parciais sejam confundidos com resultados válidos. | Dado tarefa terminada (sucesso, falha ou cancelamento), quando o utilizador consulta o projeto, então nenhum ficheiro parcial é visível ou descarregável. |
 | `REQ-VID-COM-012` | O sistema deve permitir consultar tarefas e resultados depois de fechar e reabrir a aplicação. | Should | ALT (`RNF45`) | UC-VID-002/003/004/005 | Garante persistência do trabalho do utilizador entre sessões. | Dado utilizador que fecha e reabre a aplicação, quando consulta o projeto, então as tarefas e resultados anteriores estão visíveis com o respetivo estado. |
@@ -582,8 +584,8 @@ a extensão altera ou expande o comportamento do elemento da baseline indicado.
 
 | ID | Requisito | ISO/IEC 25010 | Alvo MVP | Alvo produção | Evolução | Prioridade | Origem | Critério de aceitação |
 |---|---|---|---|---|---|---|---|---|
-| `REQ-VID-NF-001` | O sistema deve responder à aceitação/rejeição sem aguardar processamento. | Eficiência de Desempenho | ≤ 2 s para submissão; validação de upload 500 MB ≤ 5 s após receção | 99% das respostas ≤ 1 s sob carga definida | Novo | Must | DQ-001, todos | Medir latência de submissão em ≥ 20 pedidos válidos e inválidos; verificar que a validação não bloqueia a confirmação ao utilizador. |
-| `REQ-VID-NF-002` | O sistema deve processar conversão de vídeos até 2 min/500 MB em ≤ 2 min em 95% dos testes definidos. | Eficiência de Desempenho | 95% das conversões elegíveis no ambiente de demonstração completam em ≤ 2 min | 99% em ≤ 90 s sob carga definida | Novo | Should | UC-VID-003 | Executar ≥ 20 conversões elegíveis no ambiente documentado e verificar a percentagem de conclusão dentro do prazo. |
+| `REQ-VID-NF-001` | O sistema deve responder à aceitação/rejeição sem aguardar processamento. | Eficiência de Desempenho | ≤ 2 s para submissão; validação de upload até 500 MB ≤ 5 s após receção | 99% das respostas ≤ 1 s sob carga definida | Novo | Must | DQ-001, todos | Medir latência de submissão em ≥ 20 pedidos válidos e inválidos; verificar que a validação não bloqueia a confirmação ao utilizador. |
+| `REQ-VID-NF-002` | O sistema deve processar conversão de vídeos dentro dos limites do perfil em ≤ 2 min em 95% dos testes definidos. | Eficiência de Desempenho | 95% das conversões elegíveis no ambiente de demonstração completam em ≤ 2 min | 99% em ≤ 90 s sob carga definida | Novo | Should | UC-VID-003 | Executar ≥ 20 conversões elegíveis por perfil no ambiente documentado e verificar a percentagem de conclusão dentro do prazo. |
 | `REQ-VID-NF-003` | O sistema deve suportar cinco tarefas simultâneas e manter até 100 em fila sem perda. | Eficiência de Desempenho | 5 tarefas ativas / 100 em fila sem perda | Escalável horizontalmente; fila persistente | Novo | Should | UC-VID-002/004 | Submeter 6 tarefas simultâneas e verificar que a 6.ª fica em fila sem erro; submeter 101 e verificar ausência de perda. |
 | `REQ-VID-NF-004` | O sistema deve impedir alteração do original e publicação de parcial em falhas, cancelamentos e interrupções. | Fiabilidade | 100% dos cenários de falha, cancelamento e interrupção | 100% com recuperação documentada e testes automatizados | Novo | Must | DQ-002, todos | Injetar falha durante processamento e verificar que o original está inalterado e nenhum resultado parcial é acessível. |
 | `REQ-VID-NF-005` | O sistema deve limpar temporários e parciais no máximo uma hora após tarefa final; uploads falhados em 24 h. | Fiabilidade | Temporários limpos ≤ 1 h após tarefa final; uploads falhados ≤ 24 h | ≤ 15 min para temporários; limpeza monitorizada | Novo | Must | UC-VID-001—005 | Aguardar 1 h após tarefa falhada e verificar que ficheiros temporários foram eliminados ou são inacessíveis. |
@@ -600,7 +602,7 @@ a extensão altera ou expande o comportamento do elemento da baseline indicado.
 
 | Tópico | Caso(s) | Aplicável? | Decisão/justificação | Requisitos |
 |---|---|---|---|---|
-| Formato, codec, duração e dimensão | Todos | Sim | Validar no upload e novamente antes de cada tarefa; aplicar matriz e limites comuns. | `COM-003/004`, `NF-010` |
+| Formato, codec, duração e dimensão | Todos | Sim | Validar no upload e novamente antes de cada tarefa; aplicar matriz e limites por perfil: Free 100 MB/60 segundos/1080p; Premium 500 MB/10 minutos/4K. | `COM-003/004`, `NF-010` |
 | Estado, progresso, cancelamento e resultado | Todos | Sim | Upload tem progresso próprio; tarefas usam ciclo de vida comum e cancelamento best effort. | `COM-005` a `012`, `NF-001`, `NF-008` |
 | Falhas durante processamento | UC-VID-002—005 | Sim | `failed`, mensagem, limpeza e ausência de parcial; sem retoma automática no MVP. | `COM-011`, `NF-004/005` |
 | Falhas durante upload | UC-VID-001 | Sim | Associação atómica, retry explícito e limpeza posterior. | `UPL-002/003/005`, `NF-005` |
@@ -615,13 +617,11 @@ Foram fundidos requisitos que descreviam o mesmo comportamento, especialmente va
 autorização, estados, quota, cancelamento, preservação do original, limpeza, persistência,
 progresso e publicação do resultado. Foram removidas as contradições entre:
 
-- 100 MB, 500 MB e 1 GB: prevalece 500 MB no MVP;
-- 60 s, 180 s, 600 s e 10 min: prevalece 10 minutos no MVP;
-- 1080p e 4K: prevalece 1080p no MVP;
+- 100 MB/60 s/1080p para Free e 500 MB/10 min/4K para Premium;
 - MP4 apenas, MP4/WebM e MP4/MKV: prevalece MP4/H.264/AAC; WebM/MKV ficam adiados;
 - estados em português e inglês: armazenamento usa estados canónicos em inglês, interface pode
   traduzi-los;
-- quota Premium ilimitada e quota comum: MVP usa política comum; diferenciação fica adiada;
+- quota Free de 5 operações/dia e quota Premium sem limite diário de operações de vídeo;
 - vídeo anotado obrigatório e opcional: JSON é obrigatório, vídeo anotado é opcional;
 - cancelamento que invalida execução anterior automaticamente: só cancelamento explícito ou
   política de concorrência aprovada invalida execução;
