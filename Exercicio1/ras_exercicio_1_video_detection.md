@@ -8,7 +8,7 @@
 | **Campo** | **Valor** |
 |-----------|-----------|
 | **Grupo / Equipa** |  |
-| **Autores** |  |
+| **Autores** | José Miguel Fernandes Cação |
 | **Data** | 2026-10-13 |
 | **Versão do documento** | v1.0 |
 | **Unidade Curricular** | Requisitos e Arquiteturas de Software — MEI, Universidade do Minho |
@@ -37,7 +37,7 @@ O PictuRAS já disponibiliza as ferramentas `people_ai` e `obj_ai` para imagens.
 | **ID do Caso de Uso** | UC-VID-001 |
 | **Nome** | Detetar Pessoas e Objetos num Vídeo |
 | **Versão** | v1.0 |
-| **Autor** |  |
+| **Autor** | José Miguel Fernandes Cação |
 | **Data** | 2026- |
 | **Objetivo** | Permitir ao utilizador submeter um vídeo, selecionar deteção de pessoas e/ou objetos e obter um resultado com as deteções identificadas em cada fotograma, sem alterar o vídeo original. |
 | **Âmbito** | Frontend, API Gateway, serviço de projetos, armazenamento de objetos, RabbitMQ, workers de IA e WebSocket Gateway do PictuRAS. |
