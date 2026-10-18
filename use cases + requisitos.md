@@ -1,7 +1,7 @@
 # Exercício 2 — Especificação de Requisitos Consolidada
 ## Fase 1: Suporte a Vídeo no PictuRAS
 
-**Versão:** 1.0 — consolidação dos Exercícios 1 e 2 do grupo
+**Versão:** 1.1 — consolidação dos Exercícios 1 e 2 do grupo
 **Data:** 2026-10-17
 **Âmbito:** carregamento, recorte, conversão, filtros e deteção em vídeo
 
@@ -114,7 +114,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |------------|--------------|
 | **ID do Caso de Uso** | UC-VID-002 |
 | **Nome** | Recortar um Intervalo Temporal de um Vídeo |
-| **Versão** | v1.1 |
+| **Versão** | v1.2 |
 | **Autor** | Diogo Araújo Machado |
 | **Data** | 2026-10-14 |
 | **Objetivo** | Permitir ao utilizador criar um novo vídeo a partir de um intervalo temporal (início–fim) de um vídeo existente num dos seus projetos, escolhendo o formato e a resolução de saída, e acompanhar o processamento até à conclusão. |
@@ -150,7 +150,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | FA2 – Cancelamento durante o processamento | Nos passos 8–9, o utilizador cancela a tarefa **A processar** → O sistema interrompe o *worker*, elimina o resultado parcial, passa a tarefa a **Cancelada**, não consome quota e mantém o original inalterado |
 | FA3 – Instante final omitido | No passo 3, o utilizador define apenas o instante inicial → O sistema assume como instante final o fim do vídeo e mostra-o no resumo |
 | FA4 – Nome já existente | No passo 4, já existe um ficheiro com o nome escolhido no projeto → O sistema sugere um nome alternativo (por exemplo, com sufixo numérico) e pede confirmação antes de avançar |
-| FA5 – Limite de tarefas simultâneas atingido | No passo 6, o utilizador já tem o número máximo de tarefas ativas (RN6) → O sistema aceita o pedido, mas mantém a tarefa no estado **Em espera** até uma tarefa anterior terminar, informando o utilizador |
+| FA5 – Limite de tarefas simultâneas atingido | No passo 5, o utilizador já tem o número máximo de tarefas ativas (RN6) → O sistema rejeita o pedido, informa que deve aguardar a conclusão de uma tarefa em curso e não cria tarefa nem reserva quota |
 | FA6 – Perfil do utilizador | Em qualquer passo, o ator tem perfil Free ou Premium → o sistema aplica os limites e a prioridade correspondentes ao perfil: Free até 1080p, uma tarefa ativa e fila normal; Premium até 4K, três tarefas ativas e fila prioritária |
 | FA7 – Regresso após ausência | O utilizador fecha a aplicação no passo 9 e regressa mais tarde → O sistema mostra, no projeto, o estado atual de cada tarefa (a processar, concluída, falhada ou cancelada) e apresenta a notificação pendente, mesmo que o utilizador não estivesse ligado quando o evento ocorreu |
 | FA8 – Pedido idêntico duplicado | No passo 5, existe uma tarefa ativa do mesmo utilizador, sobre o mesmo vídeo, com o mesmo intervalo e as mesmas opções → O sistema informa que o pedido já está em curso e apresenta essa tarefa, sem criar outra |
@@ -166,7 +166,6 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **(Vídeo)** Quota diária de operações esgotada (RN3) | No passo 2 ou 5, o sistema não cria a tarefa e informa *“Quota diária esgotada”*. No Free aplica-se o limite diário de 5 operações; no Premium não há limite diário de operações de vídeo. |
 | **(Vídeo)** Falha a meio do processamento (erro do *worker*, ficheiro corrompido a meio da leitura, falta de recursos) | O sistema passa a tarefa a **Falhou**, elimina o resultado parcial, não consome quota, mantém o original inalterado e notifica o utilizador com a mensagem *“Não foi possível recortar o vídeo. Tente novamente.”*. Uma nova tentativa tem de ser iniciada explicitamente pelo utilizador. |
 | **(Vídeo)** Tempo máximo de processamento excedido (RN9) | Interrompe a tarefa e trata-a como falha a meio do processamento (elimina o parcial, não consome quota, notifica o utilizador) |
-| Espaço de armazenamento do utilizador insuficiente para guardar o resultado | No passo 5, rejeita o pedido com a indicação do espaço necessário. Se o problema surgir no passo 11, a tarefa passa a **Falhou**, sem consumir quota, e o resultado é eliminado |
 | O vídeo original (ou o projeto) é removido pelo utilizador enquanto a tarefa está em fila ou a processar | O sistema cancela a tarefa (como em FA1/FA2) e informa o utilizador de que o vídeo de origem deixou de existir |
 | Perda de ligação do cliente durante o processamento | O processamento prossegue no servidor (passo 9). Quando o cliente se voltar a ligar, aplica-se o FA7 |
 | Falha na verificação do ficheiro de saída (passo 10: duração fora da tolerância ou ficheiro ilegível) | Trata-se como falha a meio do processamento (RN9): o resultado é descartado e a tarefa passa a **Falhou** |
@@ -236,7 +235,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |------------|--------------|
 | **ID do Caso de Uso** | UC-VID-003 |
 | **Nome** | Converter vídeo para outro formato ou resolução |
-| **Versão** | v1.0.1 |
+| **Versão** | v1.0.2 |
 | **Autor** | Beatriz Miranda |
 | **Data** | 2026-10-13 |
 | **Objetivo** | Permitir ao utilizador obter uma cópia do vídeo no formato suportado e na resolução escolhida |
@@ -273,6 +272,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | O formato ou resolução escolhidos não são suportados para o perfil. | Não inicia o processamento e apresenta as opções válidas. |
 | A quota diária do perfil está esgotada. | Não inicia o processamento e informa o utilizador sobre o limite. |
 | O processamento falha depois de começar. | Marca a operação como falhada, não publica um resultado incompleto, mantém o original e apresenta uma mensagem de erro. |
+| O vídeo original ou o projeto é removido enquanto a tarefa está em fila ou em processamento. | Cancela a tarefa, estorna a quota reservada e informa o utilizador de que o vídeo de origem deixou de existir. |
 
 ### 4.3.5 Pós-condições
 
@@ -316,7 +316,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |------------|--------------|
 | **ID do Caso de Uso** | UC-VID-004 |
 | **Nome** | Aplicar filtros visuais e ajustes de cor a um vídeo |
-| **Versão** | v2.0 |
+| **Versão** | v2.1 |
 | **Autor** | Equipa PictuRAS |
 | **Data** | 2026-10-15 |
 | **Objetivo** | Permitir ao utilizador selecionar um vídeo da biblioteca, aplicar um estilo visual predefinido (ex: Preto e Branco, Sépia) ou ajustar parâmetros de cor (brilho, contraste, saturação), obtendo o resultado como um novo ficheiro na sua biblioteca. |
@@ -333,7 +333,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | 1 | O utilizador abre a biblioteca e seleciona um vídeo | Apresenta os metadados do vídeo (título, duração, resolução, tamanho e formato), uma pré-visualização no leitor e o painel de ajustes visuais (filtros predefinidos e controlos de brilho, contraste e saturação) |
 | 2 | O utilizador escolhe um estilo predefinido (ex: Preto e Branco) ou ajusta os marcadores manuais de cor | Valida que os valores inseridos estão dentro dos intervalos permitidos e atualiza dinamicamente a pré-visualização do vídeo |
 | 3 | O utilizador confirma a aplicação dos filtros | Valida a compatibilidade técnica do vídeo (formato, codecs, tamanho e duração face ao perfil), verifica a quota diária, reserva uma unidade da quota e cria a tarefa de processamento assíncrono |
-| 4 | — | Coloca a tarefa na fila de processamento (*message broker*), associa-lhe um identificador único (UUID) e apresenta o estado **Em espera** |
+| 4 | — | Coloca a tarefa na fila de processamento (*message broker*), associa-lhe um identificador único (UUID) e apresenta o estado **Em fila** (`queued`) |
 | 5 | — | Um *worker* disponível recolhe a tarefa, extrai a faixa de áudio e decompõe o vídeo numa sequência numerada de fotogramas; aplica os filtros de imagem a cada fotograma mantendo a ordem estrita; recombina os fotogramas processados na sua ordem temporal original com a faixa de áudio original sincronizada; e emite periodicamente o progresso |
 | 6 | O utilizador acompanha o estado na página do projeto (ou pode navegar para fora mantendo o processamento em segundo plano) | Apresenta a percentagem de progresso, o estado atual e a opção de cancelar a operação enquanto o processamento estiver em execução |
 | 7 | — | Concluída a codificação, o sistema valida a integridade do ficheiro resultante, elimina artefactos temporários de fotogramas, regista o resultado como um novo recurso no armazenamento de objetos e na biblioteca, preserva o original intacto e confirma a dedução definitiva da quota reservada |
@@ -358,8 +358,9 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | **A duração, o tamanho ou a resolução do vídeo excedem o limite do perfil do utilizador** | Impede a submissão e informa os limites do plano atual: Free (60 s / 100 MB / 1080p) ou Premium (10 min / 500 MB / 4K), sugerindo atualização de plano quando aplicável. |
 | **A quota diária do utilizador é insuficiente** | Bloqueia a submissão no Passo 3, informa que a quota foi atingida e não cria tarefa. Não é verificada uma quota total de armazenamento no MVP. |
 | **O utilizador atinge o número máximo de tarefas ativas em simultâneo** | Impede a criação da tarefa e informa o utilizador que deve aguardar a conclusão de uma tarefa em execução. |
-| **O processamento falha a meio por erro de codificação ou excede o tempo limite (timeout)** | Marca a tarefa como **Falhada**, regista a causa do erro, elimina imediatamente todos os fotogramas e artefactos temporários, estorna a quota reservada e mantém o vídeo original intacto. Não há retoma automática (decisão transversal, secção 4.6). |
+| **O processamento falha a meio por erro de codificação ou excede o tempo limite de 15 min** | Marca a tarefa como **Falhada**, regista a causa do erro, elimina imediatamente todos os fotogramas e artefactos temporários, estorna a quota reservada e mantém o vídeo original intacto. Não há retoma automática (decisão transversal, secção 4.6). |
 | **O ficheiro final gerado falha na validação de integridade pós-codificação** | Não publica o resultado na biblioteca, marca a tarefa como falhada, limpa os temporários, estorna a quota e notifica o utilizador da falha de codificação. |
+| **O vídeo original ou o projeto é removido enquanto a tarefa está em fila ou em processamento** | Cancela a tarefa, elimina os fotogramas e artefactos temporários, estorna a quota reservada e informa o utilizador de que o vídeo de origem deixou de existir. |
 
 ### 4.4.5 Pós-condições
 
@@ -426,14 +427,14 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 |------------|--------------|
 | **ID do Caso de Uso** | UC-VID-005 |
 | **Nome** | Detetar Pessoas e Objetos num Vídeo |
-| **Versão** | v1.0 |
+| **Versão** | v1.1 |
 | **Autor** | José Miguel Fernandes Cação |
 | **Data** | 2026-10-17 |
 | **Objetivo** | Permitir ao utilizador submeter um vídeo, selecionar deteção de pessoas e/ou objetos e obter um resultado com as deteções identificadas em cada fotograma, sem alterar o vídeo original. |
 | **Âmbito** | Frontend, API Gateway, serviço de projetos, armazenamento de objetos, RabbitMQ, workers de IA e WebSocket Gateway do PictuRAS. |
 | **Ator Principal** | Utilizador registado com permissão de edição no projeto; pode ter perfil gratuito ou premium. |
 | **Stakeholders e Interesses** | - **Utilizador**: pretende analisar pessoas e objetos ao longo de um vídeo e consultar ou descarregar os resultados.<br>- **Proprietário do sistema**: pretende disponibilizar uma funcionalidade diferenciadora, controlando o consumo de recursos e as operações avançadas.<br>- **Equipa de desenvolvimento**: pretende reutilizar a arquitetura assíncrona existente e manter o processamento isolado em workers.<br>- **Administrador da infraestrutura**: pretende que os ficheiros temporários e os resultados não comprometam o armazenamento ou a estabilidade dos serviços. |
-| **Pré-condições** | - O utilizador tem sessão iniciada e pode editar o projeto selecionado.<br>- O projeto existe e pode receber um novo conteúdo.<br>- O vídeo está num formato suportado pela implementação de vídeo e respeita os limites de tamanho e duração definidos para o perfil.<br>- Pelo menos uma ferramenta (`people_ai` ou `obj_ai`) está disponível e foi selecionada.<br>- O sistema consegue aceder ao armazenamento de objetos, ao RabbitMQ e aos workers necessários. |
+| **Pré-condições** | - O utilizador tem sessão iniciada e pode editar o projeto selecionado.<br>- O projeto existe e pode receber um novo conteúdo.<br>- O vídeo está num formato suportado pela implementação de vídeo e respeita os limites de tamanho e duração definidos para o perfil.<br>- Pelo menos uma ferramenta (`people_ai` ou `obj_ai`) está disponível e foi selecionada.<br>- O sistema consegue aceder ao armazenamento de objetos, ao RabbitMQ e aos workers necessários.<br>- O carregamento do vídeo nos passos 1–2 segue as regras do UC-VID-001; a deteção exige conta registada (secção 4.6). |
 | **Trigger** | O utilizador seleciona ou carrega um vídeo, escolhe `people_ai` e/ou `obj_ai` e confirma a operação **Detetar no vídeo**. |
 
 ### 4.5.2 Fluxo Principal
@@ -469,6 +470,7 @@ Os textos abaixo preservam a estrutura e o nível de detalhe dos casos de uso or
 | O armazenamento, RabbitMQ ou worker não está disponível. | Regista o erro, marca a execução como falhada, remove os recursos temporários que tenham sido criados e devolve as operações reservadas que ainda não tenham sido consumidas. |
 | O worker falha durante a extração ou deteção de um fotograma. | Termina a execução com estado **falhado**, não disponibiliza um resultado incompleto como resultado final, conserva o vídeo original e apresenta uma mensagem que permite tentar novamente. |
 | O utilizador inicia uma nova execução ou cancela a execução atual antes da conclusão. | O sistema invalida a execução anterior através do mecanismo de tokens existente e só aceita como resultado final uma execução que continue a ser a ativa. |
+| O vídeo original ou o projeto é removido enquanto a execução está pendente ou em processamento. | Cancela a execução, limpa os temporários, devolve as operações reservadas e informa o utilizador de que o vídeo de origem deixou de existir. |
 
 ### 4.5.5 Pós-condições
 
@@ -551,11 +553,18 @@ a extensão altera ou expande o comportamento do elemento da baseline indicado.
 | `REQ-VID-COM-010` | O sistema deve manter o original inalterado e guardar cada resultado como recurso independente associado ao projeto e origem. | Must | ALT (`UC04`, `RNF45`) | UC-VID-002/003/004/005 | Garante integridade dos ativos e rastreabilidade dos resultados. | Dado processamento concluído, quando o utilizador consulta o projeto, então o original está inalterado e o resultado aparece como recurso independente associado ao original. |
 | `REQ-VID-COM-011` | O sistema deve remover ou ocultar artefactos parciais e temporários após sucesso, falha ou cancelamento. | Must | NOVO | Todos | Impede que ficheiros parciais sejam confundidos com resultados válidos. | Dado tarefa terminada (sucesso, falha ou cancelamento), quando o utilizador consulta o projeto, então nenhum ficheiro parcial é visível ou descarregável. |
 | `REQ-VID-COM-012` | O sistema deve permitir consultar tarefas e resultados depois de fechar e reabrir a aplicação. | Should | ALT (`RNF45`) | UC-VID-002/003/004/005 | Garante persistência do trabalho do utilizador entre sessões. | Dado utilizador que fecha e reabre a aplicação, quando consulta o projeto, então as tarefas e resultados anteriores estão visíveis com o respetivo estado. |
+| `REQ-VID-COM-013` | O sistema deve rejeitar um pedido de processamento quando o utilizador já tiver o número máximo de tarefas em `queued` ou `processing` do seu perfil (Free: 1; Premium: 3). | Must | NOVO | UC-VID-002 RN6, FA5; UC-VID-004 RN8, Exceção 5; secção 4.6 | Controla a ocupação dos workers e impede que um utilizador ocupe a fila sozinho. | Dado utilizador Free com 1 tarefa ativa, quando submete outro pedido, então o sistema rejeita-o sem criar tarefa nem reservar quota; dado utilizador Premium com 2 tarefas ativas, quando submete outro pedido válido, então o pedido é aceite. |
+| `REQ-VID-COM-014` | O sistema deve iniciar as tarefas em `queued` de utilizadores Premium antes das tarefas em `queued` de utilizadores Free. | Should | NOVO | UC-VID-002 RN6, FA6; secção 4.6 | Concretiza a diferenciação de serviço do perfil Premium. | Dado uma tarefa Free e, depois, uma tarefa Premium em `queued` com todos os workers ocupados, quando um worker fica livre, então é iniciada a tarefa Premium. |
+| `REQ-VID-COM-015` | O sistema deve cancelar as tarefas em `queued` ou `processing` cujo vídeo de origem ou projeto seja removido. | Should | NOVO | UC-VID-002 Exceção 8; UC-VID-003 Exceção 5; UC-VID-004 Exceção 8; UC-VID-005 Exceção 7 | Evita tarefas presas e workers a ler ficheiros que já não existem. | Dado tarefa em `processing`, quando o utilizador remove o vídeo de origem, então a tarefa passa a `cancelled`, a quota reservada é estornada e o utilizador é informado. |
+| `REQ-VID-COM-016` | O sistema deve validar novamente o vídeo, os parâmetros, os limites do perfil e a quota no momento em que aceita cada tarefa, independentemente das validações feitas na interface. | Must | NOVO | UC-VID-002 Passo 5; UC-VID-003 Passo 2; UC-VID-004 Passo 3; UC-VID-005 Passo 4 | Impede que as validações da interface sejam contornadas e que entrem na fila pedidos inválidos. | Dado pedido enviado sem passar pela interface, com parâmetros fora dos limites, quando o sistema o recebe, então rejeita-o sem criar tarefa nem reservar quota. |
+| `REQ-VID-COM-017` | O sistema deve registar o motivo do estado final de cada tarefa que termine em `failed` ou `cancelled`. | Should | NOVO | UC-VID-002 Garantia Mínima; UC-VID-004 Exceção 6; UC-VID-005 Exceção 4 | Sem retry automático, o motivo é a única forma de diagnosticar a falha e de a explicar ao utilizador. | Dado tarefa terminada em `failed` por tempo máximo excedido, quando se consulta o registo da tarefa, então o motivo está registado. |
+| `REQ-VID-COM-018` | O sistema deve verificar que o vídeo resultante é legível e corresponde ao formato e à resolução pedidos antes de o publicar. | Must | NOVO | UC-VID-002 Passo 10, Exceção 10; UC-VID-003 Garantia Mínima; UC-VID-004 Passo 7, RN7; secção 4.6 (Resultados) | Garante que só são publicados resultados válidos, em todas as ferramentas que produzem vídeo. | Dado vídeo resultante ilegível ou com resolução diferente da pedida, quando o processamento termina, então a tarefa passa a `failed` e o ficheiro não é publicado. |
 | `REQ-VID-UPL-001` | O sistema deve permitir submeter vídeo para projeto acessível e, quando aplicável, criar projeto a partir de vídeo. | Must | ALT (`UC04`, `RF50`) | UC-VID-001 | É a entrada funcional do suporte a vídeo e valida a integração upload–projeto. | Dado utilizador autenticado com projeto acessível, quando submete vídeo válido, então o vídeo é guardado e associado ao projeto. |
 | `REQ-VID-UPL-002` | O sistema deve apresentar progresso durante o upload e confirmar associação apenas após guardar ficheiro completo. | Must | NOVO | UC-VID-001 | Impede que o utilizador fique sem feedback durante transferências de centenas de MB. | Dado upload em curso, quando decorre tempo, então o progresso é atualizado; quando termina, a confirmação só aparece após guardar o ficheiro completo. |
 | `REQ-VID-UPL-003` | O sistema deve permitir cancelar upload ou fechar seletor sem alterar projeto. | Should | NOVO | UC-VID-001 | Garante que cancelar a seleção ou o upload não produz efeitos laterais no projeto. | Dado seletor aberto ou upload em curso, quando o utilizador cancela, então o projeto não tem nova entrada e nenhum ficheiro parcial fica acessível. |
 | `REQ-VID-UPL-004` | O sistema deve adicionar vídeo sem substituir conteúdos existentes e manter o original. | Must | ALT (`UC04`, `RNF45`) | UC-VID-001 | Preserva vídeos existentes ao adicionar novos. | Dado projeto com vídeo existente, quando o utilizador submete outro vídeo válido, então o vídeo original permanece acessível e um novo recurso independente é criado. |
 | `REQ-VID-UPL-005` | O sistema deve permitir repetir submissão após falha e evitar duplicação de confirmação repetida. | Should | NOVO | UC-VID-001 | Evita duplicação por re-submit e permite recuperação de falha. | Dado upload falhado, quando o utilizador tenta novamente, então é criada exatamente uma entrada; dado confirmação repetida da mesma submissão, então não é criada entrada duplicada. |
+| `REQ-VID-UPL-006` | O sistema não deve contabilizar a submissão de um vídeo como operação da quota diária. | Must | ALT (`RNF48`) | UC-VID-001 RN4; secção 4.6 (Quota) | Mantém o upload como gestão base de conteúdo e delimita a regra de contagem de operações para vídeo. | Dado utilizador Free sem operações restantes, quando submete um vídeo válido, então a submissão é aceite e o contador de operações não muda. |
 | `REQ-VID-TRIM-001` | O sistema deve permitir definir início e fim por marcadores ou valores e mostrar duração do resultado. | Must | NOVO | UC-VID-002 | É a interface principal de definição do intervalo de recorte. | Dado vídeo selecionado, quando o utilizador acede à ferramenta Recortar, então pode definir início e fim por marcadores ou campos numéricos e vê a duração do resultado. |
 | `REQ-VID-TRIM-002` | O sistema deve validar `0 ≤ início < fim ≤ duração` e rejeitar intervalos inferiores a 1 segundo. | Must | NOVO | UC-VID-002 | Impede a criação de tarefas com intervalos geometricamente inválidos. | Dado intervalo com início ≥ fim ou duração < 1 s, quando o utilizador tenta confirmar, então o botão está desativado e é mostrada mensagem de erro. |
 | `REQ-VID-TRIM-003` | O sistema deve aproximar limites ao fotograma mais próximo e usar o fim do vídeo quando omitido. | Should | NOVO | UC-VID-002 | Garante resultado determinístico sem sub-frame e suporte ao caso de fim omitido. | Dado instante não coincidente com fotograma, quando o utilizador define esse limite, então o sistema usa o fotograma mais próximo; dado fim omitido, então usa o fim do vídeo. |
@@ -597,17 +606,21 @@ a extensão altera ou expande o comportamento do elemento da baseline indicado.
 | `REQ-VID-NF-011` | O sistema deve isolar processamento de vídeo das ferramentas e lotes de imagem. | Manutenibilidade | 0 regressões nas ferramentas de imagem após integração de vídeo | Contratos versionados entre serviços; regressão automatizada | Novo | Must | DQ-006, `UC04` | Executar testes de regressão das ferramentas de imagem antes e depois de integrar vídeo e verificar ausência de falhas. |
 | `REQ-VID-NF-012` | O sistema deve permitir adicionar filtros/modelos através de módulos desacoplados. | Manutenibilidade | Nova ferramenta de vídeo adicionável sem alterar serviços centrais | Contrato versionado para novas ferramentas | Novo | Should | UC-VID-004/005 | Adicionar ferramenta de vídeo simulada e verificar que não é necessário alterar serviços centrais. |
 | `REQ-VID-NF-013` | Workers e dependências multimédia/visão devem executar em contentores Docker reproduzíveis. | Portabilidade | Worker e dependências executáveis com docker-compose no ambiente documentado | Imagens versionadas e reproduzíveis em ambientes suportados | Novo | Should | DQ-007, todos | Recriar o ambiente a partir da documentação e executar o cenário de sucesso de pelo menos um caso de uso de vídeo. |
+| `REQ-VID-NF-014` | O sistema deve rejeitar vídeos com tamanho superior a 100 MB (Free) ou 500 MB (Premium). | Eficiência de Desempenho (capacidade) | Free ≤ 100 MB; Premium ≤ 500 MB | Limites configuráveis por perfil | Novo | Must | UC-VID-001 RN3; UC-VID-004 RN3; secção 4.6 | Para cada perfil, submeter um vídeo com o tamanho exato do limite e outro 1 MB acima; verificar que o primeiro é aceite e o segundo rejeitado, com indicação do limite. |
+| `REQ-VID-NF-015` | O sistema deve rejeitar vídeos com duração superior a 60 s (Free) ou 10 min (Premium). | Eficiência de Desempenho (capacidade) | Free ≤ 60 s; Premium ≤ 10 min | Limites configuráveis por perfil | Novo | Must | UC-VID-001 RN3; UC-VID-002 RN1; UC-VID-004 RN2; secção 4.6 | Para cada perfil, submeter um vídeo com a duração exata do limite e outro 1 s acima; verificar que o primeiro é aceite e o segundo rejeitado, com indicação do limite. |
+| `REQ-VID-NF-016` | O sistema deve rejeitar pedidos de processamento de vídeos com resolução superior a 1920 × 1080 px (Free) ou 3840 × 2160 px (Premium). | Eficiência de Desempenho (capacidade) | Free ≤ 1080p; Premium ≤ 4K | Limites configuráveis por perfil | Novo | Must | UC-VID-004 RN9; UC-VID-002 RN5; secção 4.6 | Pedir, com o perfil Free, o processamento de um vídeo 4K; verificar a rejeição com indicação do limite e que não é criada tarefa. |
+| `REQ-VID-NF-017` | O sistema deve terminar como `failed` a tarefa cujo processamento exceda 15 min. | Fiabilidade | ≤ 15 min por tarefa | Limite proporcional à duração do vídeo | Novo | Must | UC-VID-002 RN9, Exceção 7; UC-VID-004 Exceção 6 | Simular um worker bloqueado; verificar que ao fim de 15 min a tarefa passa a `failed`, a quota é estornada e a vaga de tarefa ativa fica livre. |
 
 ### 5.3 Verificação da completude e dos limites do âmbito
 
 | Tópico | Caso(s) | Aplicável? | Decisão/justificação | Requisitos |
 |---|---|---|---|---|
-| Formato, codec, duração e dimensão | Todos | Sim | Validar no upload e novamente antes de cada tarefa; aplicar matriz e limites por perfil: Free 100 MB/60 segundos/1080p; Premium 500 MB/10 minutos/4K. | `COM-003/004`, `NF-010` |
-| Estado, progresso, cancelamento e resultado | Todos | Sim | Upload tem progresso próprio; tarefas usam ciclo de vida comum e cancelamento best effort. | `COM-005` a `012`, `NF-001`, `NF-008` |
-| Falhas durante processamento | UC-VID-002—005 | Sim | `failed`, mensagem, limpeza e ausência de parcial; sem retoma automática no MVP. | `COM-011`, `NF-004/005` |
+| Formato, codec, duração e dimensão | Todos | Sim | Validar no upload e novamente antes de cada tarefa; aplicar matriz e limites por perfil: Free 100 MB/60 segundos/1080p; Premium 500 MB/10 minutos/4K. | `COM-003/004`, `COM-016`, `NF-010`, `NF-014` a `016` |
+| Estado, progresso, cancelamento e resultado | Todos | Sim | Upload tem progresso próprio; tarefas usam ciclo de vida comum e cancelamento best effort. | `COM-005` a `018`, `NF-001`, `NF-008` |
+| Falhas durante processamento | UC-VID-002—005 | Sim | `failed`, mensagem, limpeza e ausência de parcial; sem retoma automática no MVP. | `COM-011`, `COM-017`, `NF-004/005`, `NF-017` |
 | Falhas durante upload | UC-VID-001 | Sim | Associação atómica, retry explícito e limpeza posterior. | `UPL-002/003/005`, `NF-005` |
 | Persistência e expiração | Todos | Sim | Recursos persistem enquanto projeto existir; registos 30 dias; política após remoção fica adiada. | `COM-010/012`, `NF-006` |
-| Perfis e contagem de operações | Todos | Sim | Autenticação obrigatória; upload não conta; uma tarefa aceite conta uma operação. | `COM-001/009`, `DET-003` |
+| Perfis e contagem de operações | Todos | Sim | Autenticação obrigatória; upload não conta; uma tarefa aceite conta uma operação. | `COM-001/009`, `COM-013/014`, `UPL-006`, `DET-003` |
 | Encadeamento e processamento em lote | Todos | Não no MVP | Operações independentes; integração com lotes de imagem explicitamente excluída. | `NF-011` |
 | Resultados de deteção | UC-VID-005 | Sim | JSON é obrigatório; vídeo anotado é opcional e não bloqueia conclusão quando não solicitado. | `DET-004` a `006` |
 
