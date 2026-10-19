@@ -317,3 +317,14 @@ test("listar, obter URL temporário e remover (COM-002, COM-030, COM-034, COM-05
   const limits = await (await fetch(`${base}/${FREE}/video-limits`, { headers: h })).json();
   assert.strictEqual(limits.limits.maxBytes, 100 * 1024 * 1024);
 });
+
+test("vários vídeos sem upload_id no mesmo projeto não colidem no índice único (resultados de tarefas)", { skip }, async () => {
+  const p = await newProject();
+  const base = {
+    project_id: p._id, owner_id: FREE, created_by: FREE, kind: "video", origin: "task",
+    size_bytes: 1, sha256: "x", container: "mp4",
+  };
+  await VideoAsset.create({ ...base, name: "a.mp4", storage_key: `${p._id}/video_out/a.mp4` });
+  await VideoAsset.create({ ...base, name: "b.mp4", storage_key: `${p._id}/video_out/b.mp4` });
+  assert.strictEqual(await VideoAsset.countDocuments({ project_id: p._id }), 2);
+});

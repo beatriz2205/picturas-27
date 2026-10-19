@@ -28,8 +28,13 @@ const videoAssetSchema = new mongoose.Schema(
 );
 
 videoAssetSchema.index({ project_id: 1, createdAt: -1 });
-// REQ-VID-SUBMIT-009: a repetição de um envio (mesmo X-Upload-Id) não cria segunda entrada
-videoAssetSchema.index({ project_id: 1, upload_id: 1 }, { unique: true, sparse: true });
+// REQ-VID-SUBMIT-009: a repetição de um envio (mesmo X-Upload-Id) não cria segunda entrada.
+// Índice parcial e não "sparse": num índice composto sparse, os documentos sem upload_id (resultados
+// de tarefas) seriam indexados como (project_id, null) e o segundo resultado do projeto falharia com 11000.
+videoAssetSchema.index(
+  { project_id: 1, upload_id: 1 },
+  { unique: true, partialFilterExpression: { upload_id: { $type: "string" } } }
+);
 
 // REQ-VID-CONV-004 / RNG-02: só MP4/H.264 com AAC ou sem áudio é aceite como entrada das ferramentas
 videoAssetSchema.virtual("acceptedAsInput").get(function () {

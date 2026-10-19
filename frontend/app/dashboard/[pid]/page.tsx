@@ -716,7 +716,10 @@ const handleCancel = () => {
 
                   <PresetsDialog />
                   <AddImagesDialog />
-                  <AddVideoDialog pid={pid} ownerId={ownerId} shareId={shareId} />
+                  {/* Vídeo só para contas registadas (RNG-01) */}
+                  {session.user.type !== "anonymous" && (
+                    <AddVideoDialog pid={pid} ownerId={ownerId} shareId={shareId} />
+                  )}
           </>
           )}
                 {/* botão Share só para o owner */}
