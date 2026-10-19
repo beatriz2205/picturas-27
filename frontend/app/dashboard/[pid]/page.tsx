@@ -5,6 +5,8 @@ import { fetchSharedProject, resolveShareLink } from "@/lib/projects";
 import { ProjectImageList } from "@/components/project-page/project-image-list";
 import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
+import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
+import { ProjectVideoList } from "@/components/project-page/project-video-list";
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "@/components/toolbar/toolbar";
 import { ShareProjectDialog } from "@/components/projects/share-dialog";
@@ -714,6 +716,7 @@ const handleCancel = () => {
 
                   <PresetsDialog />
                   <AddImagesDialog />
+                  <AddVideoDialog pid={pid} ownerId={ownerId} shareId={shareId} />
           </>
           )}
                 {/* botão Share só para o owner */}
@@ -824,6 +827,9 @@ const handleCancel = () => {
             </div>
           </div>
         </div>
+        {/* Vídeos do projeto (UC-VID-001) */}
+        <ProjectVideoList pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
+
         {/* Main Content */}
 
         <div className="h-full overflow-x-hidden flex">

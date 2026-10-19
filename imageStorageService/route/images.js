@@ -18,12 +18,17 @@ router.get("/:access/:userId/:projectId/:stage/:imageName", async (req, res) => 
 
   if (!allowedStages.includes(stage)) {
     return res.status(400).json({
-      error: "O estágio deve ser src, preview, preview_cache ou out.",
+      error: `O estágio deve ser um de: ${allowedStages.join(", ")}.`,
     });
   }
 
   try {
-    const url = await urlGetters[access](userId, projectId, stage, imageName);
+    const expires = Number(req.query.expires);
+    const opts = {
+      expires: Number.isFinite(expires) && expires > 0 && expires <= 7 * 24 * 3600 ? expires : undefined,
+      downloadName: req.query.download || undefined,
+    };
+    const url = await urlGetters[access](userId, projectId, stage, imageName, opts);
     res.status(200).json({ url });
   } catch (error) {
     res.status(500).json({ error: error.message });

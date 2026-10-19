@@ -19,7 +19,10 @@ type ErrorContext =
   | "account-password" 
   | "generic"
   | "assistant-suggest"
-  | "project-reorder";
+  | "project-reorder"
+  | "video-upload"
+  | "video-load"
+  | "video-delete";
 
 
 type ErrorInfo = {
@@ -40,7 +43,28 @@ export function getErrorMessage(
     };
   }
 
-  // 2) Mensagem vinda do backend (string simples)
+  // 2) Erros de vídeo: o backend devolve { code, message } com a causa e o limite (REQ-VID-COM-007)
+  if (axios.isAxiosError(error) && error.response?.data && typeof error.response.data === "object") {
+    const data = error.response.data as { code?: string; message?: string };
+    if (data.code && data.message) {
+      const titles: Record<string, string> = {
+        UNSUPPORTED_FORMAT: "Formato não suportado",
+        CORRUPTED_FILE: "Vídeo corrompido",
+        VIDEO_TOO_LARGE: "Vídeo demasiado grande",
+        VIDEO_TOO_LONG: "Vídeo demasiado longo",
+        RESOLUTION_TOO_HIGH: "Resolução demasiado alta",
+        AUTH_REQUIRED: "Sessão necessária",
+        EDIT_PERMISSION_REQUIRED: "Sem permissão de edição",
+        PROJECT_REMOVED: "Projeto removido",
+        SERVICE_UNAVAILABLE: "Serviço indisponível",
+        UPLOAD_ABORTED: "Envio interrompido",
+        NOT_FOUND: "Não encontrado",
+      };
+      return { title: titles[data.code] ?? "Não foi possível concluir o pedido", description: data.message };
+    }
+  }
+
+  // 3) Mensagem vinda do backend (string simples)
   const backendMsg =
     axios.isAxiosError(error) && typeof error.response?.data === "string"
       ? error.response?.data
@@ -178,6 +202,26 @@ export function getErrorMessage(
         description:
           backendMsg ??
           "Não foi possível atualizar a sequência de ferramentas. Tenta novamente.",
+      };
+
+    case "video-upload":
+      return {
+        title: "O vídeo não foi submetido",
+        description:
+          backendMsg ??
+          "O envio não foi concluído. Verifica a ligação e tenta novamente; o vídeo não ficou no projeto.",
+      };
+
+    case "video-load":
+      return {
+        title: "Erro ao carregar vídeos",
+        description: backendMsg ?? "Não foi possível obter os vídeos do projeto. Tenta novamente.",
+      };
+
+    case "video-delete":
+      return {
+        title: "Erro ao remover o vídeo",
+        description: backendMsg ?? "O vídeo não foi removido. Tenta novamente.",
       };
 
     default:
