@@ -218,8 +218,9 @@ router.post("/", function (req, res, next) {
 
 // Login user
 router.post("/:email/login", function (req, res, next) {
-  User.getOneEmail(req.params.email)
+  User.getOneEmailWithHash(req.params.email)
     .then(async (user) => {
+      if (!user || !user.password_hash) return res.status(401).jsonp("The provided credentials are incorrect");
       const correct_pass = await auth.authenticate(req.body.password, user);
       if (correct_pass) {
         const userResponse = removeSensitiveInfo(user);

@@ -29,6 +29,13 @@ module.exports.getOneEmail = async (email) => {
   return user ? user.toJSON() : null;
 };
 
+// Para o login: o toJSON() remove o password_hash, por isso é reposto aqui só para a verificação
+module.exports.getOneEmailWithHash = async (email) => {
+  const emailHash = hashEmail(email);
+  const user = await User.findOne({ email_hash: emailHash }).exec();
+  return user ? { ...user.toJSON(), password_hash: user.password_hash } : null;
+};
+
 
 module.exports.create = async (user) => {
   try {
