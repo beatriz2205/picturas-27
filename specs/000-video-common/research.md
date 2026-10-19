@@ -140,7 +140,7 @@ Se o `findOneAndUpdate` não encontrar o documento, a transição perdeu a corri
 se trouxer ficheiros, estes são apagados.
 
 **Rationale**: Cancelamento, *timeout*, remoção do vídeo e eventos do *worker* podem chegar ao mesmo
-tempo. A condição sobre o estado garante que um estado final não muda (`COM-012`) e que o estorno
+tempo. A condição sobre o estado garante que um estado final não muda (`COM-012`) e que a devolução
 acontece uma só vez.
 
 ## D8. Quota de vídeo atómica no serviço `users`
@@ -153,14 +153,14 @@ A reserva é feita com uma única atualização condicional. Para Free:
 `updateOne({_id, operations: {$elemMatch: {day, processed: {$lt: 5}}}}, {$inc: {"operations.$.processed": 1}})`,
 mais um `updateOne` com `{"operations.day": {$ne: day}}` e `$push` para o primeiro uso do dia. Premium
 devolve sempre `reserved: true` sem incrementar. A "consolidação" (`COM-022`) não muda o contador:
-marca `quotaState: "consumed"` na tarefa. O estorno decrementa o dia da reserva, sem ir abaixo de 0.
+marca `quotaState: "consumed"` na tarefa. A devolução decrementa o dia da reserva, sem ir abaixo de 0.
 
 **Rationale**:
 - O `GET /:user/process/:advanced_tools` e o `PUT` (`users/routes/users.js:131`, `:265`) leem o
   utilizador, alteram o *array* em memória e gravam. Dois pedidos simultâneos podem ler o mesmo saldo,
   o que viola `COM-051`.
 - O *refund* existente (`:317`) usa sempre o dia atual. Uma tarefa reservada antes da meia-noite e
-  falhada depois estornaria o dia errado.
+  falhada depois devolveria o dia errado.
 - O contador continua a ser `operations[].processed`, por isso o limite de 5 fica partilhado com as
   ferramentas avançadas de imagem (`COM-021`), e o `remaining_operations` que o frontend já mostra
   (`operations-counter.tsx`) inclui o vídeo sem alterações (`COM-023`).
@@ -183,7 +183,7 @@ estado final faz-se `$unset: {slotKey: ""}`.
 2. Disponibilidade do RabbitMQ e do armazenamento (`COM-009`).
 3. Inserir a tarefa com `slotKey` (`ACTIVE_TASK_LIMIT`).
 4. Reservar a quota (`QUOTA_EXHAUSTED` apaga a tarefa).
-5. Publicar na fila (se falhar, estorna e apaga a tarefa, `SERVICE_UNAVAILABLE`).
+5. Publicar na fila (se falhar, devolve e apaga a tarefa, `SERVICE_UNAVAILABLE`).
 6. Responder `202`.
 
 ## D10. Capacidade e réplicas
@@ -216,7 +216,7 @@ código.
 
 ## D12. Cancelamento
 
-**Decision**: `POST .../video-tasks/:task/cancel` passa a tarefa a `cancelled` (D7), estorna e publica
+**Decision**: `POST .../video-tasks/:task/cancel` passa a tarefa a `cancelled` (D7), devolve e publica
 `{taskId}` no *exchange fanout* `video_cancel`. Cada *worker* tem uma fila exclusiva ligada a esse
 *exchange*: se a tarefa em curso for a cancelada, mata o FFmpeg ou interrompe a inferência e apaga
 os temporários. Uma tarefa ainda em fila é descartada pelo *worker* quando chega, depois de consultar

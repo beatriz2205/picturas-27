@@ -185,7 +185,7 @@ partir do contexto `./Tools`.
    500 ms) → `503` (`COM-009`).
 8. Inserir `videoTask` com `slotKey` (D9) → `429 ACTIVE_TASK_LIMIT`.
 9. Free: `reserve` → `429 QUOTA_EXHAUSTED` (apaga a tarefa).
-10. Gerar URL interno de entrada e publicar `video_<tool>_queue` com prioridade. Se falhar: estorno,
+10. Gerar URL interno de entrada e publicar `video_<tool>_queue` com prioridade. Se falhar: devolução,
     apaga a tarefa, `503`.
 11. Publicar `video-task-update` e responder `202 TaskDTO`.
 

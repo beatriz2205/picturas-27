@@ -46,7 +46,7 @@ Em cada cenário, registar o pedido, os estados observados, o saldo de operaçõ
    - `bash specs/000-video-common/load-test.sh concurrency`: 10 pedidos simultâneos com 1 operação
      restante, só 1 aceite.
 4. **Falhas (US4)**
-   - Cancelar em fila e em processamento: a tarefa fica “Cancelada” e a operação é estornada.
+   - Cancelar em fila e em processamento: a tarefa fica “Cancelada” e a operação é devolvida.
    - `noop` com `sleepS` acima do tempo máximo: “Falhada” com o motivo “Tempo máximo excedido”.
    - `docker compose restart video_noop_worker` a meio: “Falhada” com o motivo de interrupção, e as
      tarefas em fila continuam e terminam.

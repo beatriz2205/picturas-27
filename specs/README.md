@@ -47,7 +47,7 @@ Estão justificadas em [000-video-common/research.md](000-video-common/research.
 - Filas RabbitMQ duráveis com prioridade (`x-max-priority`), `ack` manual e `prefetch=1`. Os eventos
   dos *workers* chegam ao `projects` pela fila `video_events_queue`, e o `projects` reencaminha-os para
   o `wsGateway` pela `ws_queue`.
-- Quota de vídeo com reserva, consolidação e estorno atómicos no serviço `users` (`COM-021`, `COM-022`, `COM-051`).
+- Quota de vídeo com reserva, consolidação e devolução atómicas no serviço `users` (`COM-021`, `COM-022`, `COM-051`).
 - Os vídeos passam por disco e não por memória em todos os saltos (gateway, `projects`, `imageStorageService`).
 
 ## Comandos spec-kit

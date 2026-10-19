@@ -127,7 +127,7 @@ verificar o saldo depois de cada passo; enviar 10 pedidos simultâneos com 1 ope
 
 O utilizador pode cancelar uma tarefa em fila ou em processamento. Falhas, *timeouts*, ficheiros
 malformados e reinícios de serviços deixam sempre a tarefa num estado final coerente, com motivo
-registado e operação estornada, sem resultados parciais.
+registado e operação devolvida, sem resultados parciais.
 
 **Why this priority**: Garantia mínima de todos os casos de uso; pode ser entregue logo a seguir ao
 percurso principal.
@@ -138,15 +138,15 @@ MP4 truncado, a remoção do vídeo de origem e o reinício do *worker* e do ser
 **Acceptance Scenarios**:
 
 1. **Given** uma tarefa `queued` ou `processing`, **When** o utilizador a cancela, **Then** passa a
-   `cancelled`, nada é publicado e a operação é estornada (COM-016).
+   `cancelled`, nada é publicado e a operação é devolvida (COM-016).
 2. **Given** uma tarefa ativa, **When** o vídeo de origem ou o projeto é removido, **Then** a tarefa
-   passa a `cancelled` com motivo “vídeo de origem removido” e estorno (COM-017).
+   passa a `cancelled` com motivo “vídeo de origem removido” e devolução (COM-017).
 3. **Given** uma tarefa terminada em `failed` ou `cancelled`, **When** se consulta o registo, **Then**
    o motivo está registado e visível ao utilizador (COM-020).
 4. **Given** um *worker* bloqueado com um vídeo de 30 s, **When** passam 15 min, **Then** a tarefa fica
-   `failed` por tempo máximo, com estorno, e a vaga de tarefa ativa fica livre (COM-040).
+   `failed` por tempo máximo, com devolução, e a vaga de tarefa ativa fica livre (COM-040).
 5. **Given** 1 tarefa em `processing` e 2 em `queued`, **When** o *worker* e o `projects` reiniciam,
-   **Then** a primeira fica `failed` com estorno e as outras terminam `completed` (COM-041).
+   **Then** a primeira fica `failed` com devolução e as outras terminam `completed` (COM-041).
 6. **Given** um MP4 truncado e um válido em simultâneo, **When** são processados, **Then** o primeiro
    fica `failed`, o segundo `completed` e o *worker* continua disponível (COM-042).
 
@@ -236,7 +236,7 @@ consultar o registo; deixar uma tarefa falhar e verificar a limpeza após 1 h; a
 
 - Mudança de perfil (Premium → Free) entre a submissão e o processamento: revalidação no pedido
   (COM-008); tarefas já aceites terminam com as regras do momento da aceitação.
-- Mudança de dia entre a reserva e o estorno: o estorno é feito no dia em que a operação foi reservada.
+- Mudança de dia entre a reserva e a devolução: a devolução é feita no dia em que a operação foi reservada.
 - Cancelamento concorrente com a conclusão: a primeira transição para estado final ganha; a outra é
   ignorada e, se o resultado já tiver sido carregado, é apagado.
 - Mensagem do *worker* para uma tarefa já em estado final: ignorada; ficheiros associados apagados.
@@ -280,7 +280,7 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-020**: Registar o motivo de cada tarefa `failed` ou `cancelled`.
 - **COM-021**: 1 operação por tarefa aceite; Free 5/dia partilhadas com ferramentas avançadas de
   imagem; Premium sem limite (ALT `RNF48`).
-- **COM-022**: Reservar na aceitação, consolidar em `completed`, estornar em `failed`/`cancelled`
+- **COM-022**: Reservar na aceitação, consolidar em `completed`, devolver em `failed`/`cancelled`
   (ALT `RNF48`).
 - **COM-023**: Mostrar ao Free as operações restantes antes da confirmação (ALT `RNF48`).
 - **COM-024**: Sugerir Premium quando um Free é rejeitado por quota ou limite (ALT `RF64`).
@@ -308,8 +308,8 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-038**: Temporários e parciais eliminados em ≤ 1 h após o estado final; envios falhados ≤ 24 h.
 - **COM-039**: Original inalterado e nenhum resultado parcial em 100% dos cenários de falha,
   cancelamento e interrupção.
-- **COM-040**: Tempo máximo max(15 min, 15 min × duração em minutos); depois, `failed` com estorno.
-- **COM-041**: Após reinício, tarefas `queued` mantidas e `processing` terminadas em `failed` com estorno.
+- **COM-040**: Tempo máximo max(15 min, 15 min × duração em minutos); depois, `failed` com devolução.
+- **COM-041**: Após reinício, tarefas `queued` mantidas e `processing` terminadas em `failed` com devolução.
 - **COM-042**: Ficheiro malformado termina só a sua tarefa como `failed`.
 - **COM-043**: Vídeos e resultados durante a vida do projeto; registos de tarefas 30 dias.
 - **COM-044**: Resultados reproduzíveis no Chrome e no Firefox atuais sem extensões.
@@ -345,7 +345,7 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **SC-001**: 100% dos pedidos anónimos, sem permissão ou fora dos limites são rejeitados sem tarefa
   nem alteração de quota.
 - **SC-002**: 100% das tarefas terminam num estado final com motivo (quando `failed`/`cancelled`) e com
-  a quota coerente (consolidada ou estornada).
+  a quota coerente (consolidada ou devolvida).
 - **SC-003**: 0 pedidos aceites acima da quota ou do limite de tarefas ativas em testes de concorrência.
 - **SC-004**: Aceitação de pedidos em ≤ 2 s e progresso a cada ≤ 5 s em todas as medições no ambiente
   de referência.

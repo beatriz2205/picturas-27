@@ -21,5 +21,5 @@ Testes: `(cd Tools && python -m pytest video_detect/tests)` e
    - Repetir com “Gerar também vídeo anotado”: aparecem o JSON e “… (anotado).mp4”, com caixas e
      rótulos, a mesma resolução e a mesma duração.
    - Com `VIDEO_DETECT_FAIL_ANNOTATED=1` (variável de teste do *worker*): a tarefa fica “Falhada”,
-     nenhum JSON aparece e a operação é estornada.
+     nenhum JSON aparece e a operação é devolvida.
 4. **Desempenho (DET-009)**: `bash specs/005-video-detection/bench.sh` → percentil 95 ≤ 600 s.

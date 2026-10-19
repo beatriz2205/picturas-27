@@ -62,7 +62,7 @@ Regras:
 | `reason_code` | String \| null | Obrigatório em `failed` e `cancelled` (`COM-020`) |
 | `reason_message` | String \| null | Texto para o utilizador |
 | `quota_state` | `"reserved"` \| `"consumed"` \| `"refunded"` \| `"none"` | `none` para Premium |
-| `quota_day` | Date \| null | Dia da reserva (estorno no dia certo, D8) |
+| `quota_day` | Date \| null | Dia da reserva (devolução no dia certo, D8) |
 | `slotKey` | String \| undefined | `<user_id>:<n>` enquanto ativa; índice único esparso (D9) |
 | `result_asset_ids` | [ObjectId] | Preenchido em `completed` |
 | `tmp_keys` | [String] | Chaves S3 temporárias e de resultados ainda não publicados (janitor) |
@@ -92,8 +92,8 @@ Regras:
 | — | `queued` | `slotKey` atribuído, quota reservada (Free), mensagem publicada, `queuedAt` |
 | `queued` | `processing` | `startedAt`, `deadlineAt` |
 | `processing` | `completed` | Cria `videoAsset` de resultados, `quota_state = consumed`, `$unset slotKey`, `finishedAt`, `progress = 100` |
-| `queued`/`processing` | `failed` | `reason_*`, estorno, `$unset slotKey`, `finishedAt`, apagar `tmp_keys` |
-| `queued`/`processing` | `cancelled` | `reason_*`, estorno, `$unset slotKey`, `finishedAt`, mensagem `video_cancel`, apagar `tmp_keys` |
+| `queued`/`processing` | `failed` | `reason_*`, devolução, `$unset slotKey`, `finishedAt`, apagar `tmp_keys` |
+| `queued`/`processing` | `cancelled` | `reason_*`, devolução, `$unset slotKey`, `finishedAt`, mensagem `video_cancel`, apagar `tmp_keys` |
 
 Todas as transições publicam `video-task-update` (ver `contracts/ws-events.md`).
 

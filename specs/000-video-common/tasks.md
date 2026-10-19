@@ -113,8 +113,8 @@ aceitação do Cap. 5 são testes.
 - [ ] T017 [P] Criar `users/tests/videoOps.test.js`:
   - reserva Free até 5 e a 6.ª dá `409`;
   - 10 reservas concorrentes com 1 restante, só 1 aceite;
-  - estorno no dia da reserva;
-  - estorno não desce abaixo de 0;
+  - devolução no dia da reserva;
+  - devolução não desce abaixo de 0;
   - Premium sem contador;
   - partilha com `PUT /:user/process/:n` (imagem).
   Requisitos: COM-021, COM-051.
@@ -152,7 +152,7 @@ aceitação do Cap. 5 são testes.
   - `accept(ctx)` segue os 11 passos do plan.md;
   - `transition(taskId, from[], to, set)` com `findOneAndUpdate` condicional (D7);
   - `complete(taskId, outputs, metrics)` cria os `videoAsset` e consolida a quota;
-  - `fail(taskId, code)` e `cancel(taskId, code)` estornam se `quota_state = reserved`, fazem
+  - `fail(taskId, code)` e `cancel(taskId, code)` devolvem se `quota_state = reserved`, fazem
     `$unset slotKey`, apagam `tmp_keys` e publicam `video_cancel`;
   - `log(task)` escreve uma linha JSON com tool, duration, queueMs, processingMs e status no
     `console`.
@@ -162,10 +162,10 @@ aceitação do Cap. 5 são testes.
   quota e de RabbitMQ):
   - limite de tarefas ativas Free 1 e Premium 3, incluindo pedidos concorrentes;
   - transição perdida ignorada;
-  - estorno único em cancelamento e falha concorrentes;
+  - devolução única em cancelamento e falha concorrentes;
   - estado final imutável;
   - rejeição por fila indisponível sem tarefa nem reserva;
-  - estorno quando a publicação falha.
+  - devolução quando a publicação falha.
   Requisitos: COM-009, COM-012, COM-018, COM-022, COM-051.
 - [ ] T025 Criar `projects/video/events.js`, consumidor de `video_events_queue` com `ack` manual:
   - `started` → `processing` + `deadlineAt`;
@@ -271,7 +271,7 @@ aceitação do Cap. 5 são testes.
 
 ## Phase 5: User Story 3 — Quota e tarefas ativas (P1)
 
-**Goal**: 1 operação por tarefa, com reserva, consolidação e estorno, limites de tarefas ativas e
+**Goal**: 1 operação por tarefa, com reserva, consolidação e devolução, limites de tarefas ativas e
 prioridade Premium.
 
 **Independent Test**: Cenário 3 do quickstart.
@@ -301,7 +301,7 @@ prioridade Premium.
   no vídeo ou no projeto (`source_video_removed`) antes de apagar. Requisito: COM-017.
 - [ ] T047 [P] [US4] Criar `projects/tests/failures.test.js`:
   - *timeout* com `video_noop` `sleepS` e `TIMEOUT.minMs` reduzido por variável de ambiente em teste;
-  - reinício do *worker* a meio → `failed worker_interrupted` com estorno;
+  - reinício do *worker* a meio → `failed worker_interrupted` com devolução;
   - tarefas `queued` mantidas depois do reinício;
   - MP4 truncado em paralelo com um válido.
   Requisitos: COM-040 a COM-042.
