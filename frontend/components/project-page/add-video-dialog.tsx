@@ -26,29 +26,20 @@ export function AddVideoDialog({ pid, ownerId, shareId }: { pid: string; ownerId
   const session = useSession();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
   const limits = useVideoLimits(session.user._id, session.token);
-  const upload = useUploadVideo();
+  const upload = useUploadVideo(pid);
   const flow = useVideoUpload<ProjectVideo>(limits.data);
   const busy = flow.phase === "uploading";
 
   async function handleSubmit() {
-    const submittedNames: string[] = [];
-    for (const file of files) {
-      const video = await flow.startFor(file, (opts) =>
-        upload.mutateAsync({ uid: session.user._id, pid, token: session.token, ownerId, shareId, ...opts }),
-      );
-      if (!video) return;
-      submittedNames.push(video.name);
-      setFiles((current) => current.filter((candidate) => candidate !== file));
+    const video = await flow.start((opts) =>
+      upload.mutateAsync({ uid: session.user._id, pid, token: session.token, ownerId, shareId, ...opts }),
+    );
+    if (video) {
+      toast({ title: "Vídeo submetido", description: `${video.name} foi adicionado ao projeto.` });
+      flow.reset();
+      setOpen(false);
     }
-    if (submittedNames.length === 0) return;
-    toast({
-      title: submittedNames.length === 1 ? "Vídeo submetido" : "Vídeos submetidos",
-      description: `${submittedNames.length} vídeo(s) adicionado(s) ao projeto.`,
-    });
-    flow.reset();
-    setOpen(false);
   }
 
   return (
@@ -56,10 +47,7 @@ export function AddVideoDialog({ pid, ownerId, shareId }: { pid: string; ownerId
       open={open}
       onOpenChange={(next) => {
         if (busy) return; // durante o envio, fechar só com "Cancelar envio"
-        if (!next) {
-          flow.reset();
-          setFiles([]);
-        }
+        if (!next) flow.reset();
         setOpen(next);
       }}
     >
@@ -82,7 +70,7 @@ export function AddVideoDialog({ pid, ownerId, shareId }: { pid: string; ownerId
           </DialogDescription>
         </DialogHeader>
 
-        <VideoSubmissionArea files={files} onSelect={setFiles} disabled={busy} />
+        <VideoSubmissionArea file={flow.file} onSelect={flow.setFile} disabled={busy} />
 
         {(busy || flow.phase === "failed") && (
           <div className="flex flex-col gap-1">
@@ -103,15 +91,11 @@ export function AddVideoDialog({ pid, ownerId, shareId }: { pid: string; ownerId
               Cancelar envio
             </Button>
           ) : flow.phase === "failed" ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={files.length === 0}
-              className="inline-flex items-center gap-1"
-            >
+            <Button onClick={handleSubmit} className="inline-flex items-center gap-1">
               <RotateCcw className="size-4" /> Tentar novamente
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={files.length === 0} className="inline-flex items-center gap-1">
+            <Button onClick={handleSubmit} disabled={!flow.file} className="inline-flex items-center gap-1">
               Submeter
             </Button>
           )}

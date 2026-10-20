@@ -29,9 +29,9 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
   if (!videos.data || videos.data.length === 0) return null;
 
   return (
-    <section className="h-full w-full min-w-0 overflow-y-auto px-2 py-4 md:px-4">
-      <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Vídeos ({videos.data.length})</h2>
-      <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <section className="border-b border-sidebar-border px-2 md:px-3 xl:px-4 py-3">
+      <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Vídeos ({videos.data.length})</h2>
+      <div className="flex gap-3 overflow-x-auto pb-1">
         {videos.data.map((v) => (
           <VideoCard key={v.id} video={v} access={access} canEdit={canEdit} onPlay={() => setPlaying(v)} />
         ))}
@@ -84,10 +84,10 @@ function VideoCard({
   }
 
   return (
-    <Card className="flex min-w-0 flex-col gap-2 overflow-hidden p-3">
+    <Card className="w-64 shrink-0 p-3 flex flex-col gap-2">
       <div className="flex items-start gap-2">
         <Film className="size-5 shrink-0 mt-0.5 text-muted-foreground" />
-        <p className="min-w-0 flex-1 truncate font-medium" title={video.name}>
+        <p className="truncate font-medium" title={video.name}>
           {video.name}
         </p>
       </div>

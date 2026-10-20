@@ -20,7 +20,7 @@ import { useSession } from "@/providers/session-provider";
 import { LoaderCircle, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/error-messages";
-import { useCreateProjectWithVideo, useUploadVideo } from "@/lib/mutations/videos";
+import { useCreateProjectWithVideo } from "@/lib/mutations/videos";
 import { useVideoLimits } from "@/lib/queries/videos";
 import { useVideoUpload } from "@/hooks/use-video-upload";
 
@@ -39,8 +39,6 @@ export default function NewProjectDialog({
   const [open, setOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [videoFiles, setVideoFiles] = useState<File[]>([]);
-  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [tab, setTab] = useState<"images" | "video">("images");
 
   const session = useSession();
@@ -51,7 +49,6 @@ export default function NewProjectDialog({
   const canUseVideo = session.user.type === "free" || session.user.type === "premium";
   const limits = useVideoLimits(canUseVideo ? session.user._id : "", session.token);
   const createWithVideo = useCreateProjectWithVideo(session.user._id, session.token);
-  const uploadExistingVideo = useUploadVideo();
   const videoFlow = useVideoUpload<{ project: { _id: string } }>(limits.data);
   const videoBusy = videoFlow.phase === "uploading";
 
@@ -85,39 +82,14 @@ export default function NewProjectDialog({
   }
 
   async function handleCreateWithVideo() {
-    let projectId = createdProjectId;
-    for (const file of videoFiles) {
-      if (projectId) {
-        const targetProjectId = projectId;
-        const result = await videoFlow.startFor(file, (opts) =>
-          uploadExistingVideo.mutateAsync({
-            uid: session.user._id,
-            pid: targetProjectId,
-            token: session.token,
-            ...opts,
-          }),
-        );
-        if (!result) return;
-      } else {
-        const result = await videoFlow.startFor(file, (opts) =>
-          createWithVideo.mutateAsync({
-            uid: session.user._id,
-            token: session.token,
-            name,
-            ...opts,
-          }),
-        );
-        if (!result) return;
-        projectId = result.project._id;
-        setCreatedProjectId(projectId);
-      }
-      setVideoFiles((current) => current.filter((candidate) => candidate !== file));
+    const result = await videoFlow.start((opts) =>
+      createWithVideo.mutateAsync({ uid: session.user._id, token: session.token, name, ...opts }),
+    );
+    if (result) {
+      setOpen(false);
+      toast({ title: "Projeto criado com sucesso", description: "O vídeo foi adicionado ao novo projeto." });
+      router.push(`/dashboard/${result.project._id}`);
     }
-
-    if (!projectId) return;
-    setOpen(false);
-    toast({ title: "Projeto criado com sucesso", description: "Os vídeos foram adicionados ao novo projeto." });
-    router.push(`/dashboard/${projectId}`);
   }
 
   useEffect(() => {
@@ -130,8 +102,6 @@ export default function NewProjectDialog({
   useEffect(() => {
     setName("");
     setImageFiles([]);
-    setVideoFiles([]);
-    setCreatedProjectId(null);
     videoFlow.reset();
     if (setFiles && open === false) setFiles([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,7 +112,6 @@ export default function NewProjectDialog({
       open={open}
       onOpenChange={(next) => {
         if (videoBusy) return;
-        if (!next && createdProjectId) router.push(`/dashboard/${createdProjectId}`);
         setOpen(next);
       }}
     >
@@ -156,20 +125,13 @@ export default function NewProjectDialog({
           id="project-name"
           placeholder="Enter project name"
           value={name}
-          disabled={videoBusy || !!createdProjectId}
+          disabled={videoBusy}
           onChange={(e) => setName(e.target.value)}
         />
-        <Tabs
-          value={tab}
-          onValueChange={(v) =>
-            !videoBusy && !createdProjectId && setTab(v as "images" | "video")
-          }
-        >
+        <Tabs value={tab} onValueChange={(v) => !videoBusy && setTab(v as "images" | "video")}>
           {canUseVideo && (
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="images" disabled={!!createdProjectId}>
-                Imagens
-              </TabsTrigger>
+              <TabsTrigger value="images">Imagens</TabsTrigger>
               <TabsTrigger value="video">Vídeo</TabsTrigger>
             </TabsList>
           )}
@@ -181,7 +143,7 @@ export default function NewProjectDialog({
           </TabsContent>
           {canUseVideo && (
             <TabsContent value="video" className="flex flex-col gap-2">
-              <VideoSubmissionArea files={videoFiles} onSelect={setVideoFiles} disabled={videoBusy} />
+              <VideoSubmissionArea file={videoFlow.file} onSelect={videoFlow.setFile} disabled={videoBusy} />
               {(videoBusy || videoFlow.phase === "failed") && (
                 <>
                   <Progress value={videoFlow.progress} />
@@ -190,7 +152,7 @@ export default function NewProjectDialog({
                       ? videoFlow.progress < 100
                         ? `A enviar… ${videoFlow.progress}%`
                         : "A validar o vídeo…"
-                      : "O envio falhou. Pode tentar novamente; os vídeos já enviados continuam no projeto."}
+                      : "O envio falhou. O projeto não foi criado; pode tentar novamente."}
                   </p>
                 </>
               )}
@@ -216,7 +178,7 @@ export default function NewProjectDialog({
           ) : (
             <Button
               onClick={handleCreateWithVideo}
-              disabled={videoFiles.length === 0 || (!createdProjectId && name === "")}
+              disabled={!videoFlow.file || name === ""}
               className="inline-flex items-center gap-1"
             >
               {videoFlow.phase === "failed" ? (

@@ -29,7 +29,6 @@ export interface SingleProject {
   _id: string;
   user_id: string;
   name: string;
-  mediaType?: "images" | "videos";
   tools: ProjectToolResponse[];
   imgs: ProjectImage[];
   version: number;
@@ -208,7 +207,6 @@ export const fetchProject = async (
     _id: response.data._id,
     user_id: response.data.user_id,
     name: response.data.name,
-    mediaType: response.data.mediaType,
     imgs: response.data.imgs,
     tools: response.data.tools,
     version: response.data.version,

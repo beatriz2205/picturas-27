@@ -17,7 +17,7 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
   const [file, setFileState] = useState<File | null>(null);
   const [phase, setPhase] = useState<UploadPhase>("idle");
   const [progress, setProgress] = useState(0);
-  const uploadIdsRef = useRef(new WeakMap<File, string>());
+  const uploadIdRef = useRef<string>("");
   const abortRef = useRef<AbortController | null>(null);
 
   // Cada nova seleção é uma nova submissão, com novo identificador (UC-VID-001/RN6)
@@ -25,7 +25,7 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
     setFileState(f);
     setProgress(0);
     setPhase(f ? "selected" : "idle");
-    if (f) uploadIdsRef.current.set(f, crypto.randomUUID());
+    uploadIdRef.current = f ? crypto.randomUUID() : "";
   }, []);
 
   const reset = useCallback(() => setFile(null), [setFile]);
@@ -48,22 +48,14 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
     return true;
   }
 
-  async function startFor<R>(
-    targetFile: File,
-    send: (opts: { file: File; uploadId: string; onProgress: (p: number) => void; signal: AbortSignal }) => Promise<R>,
-  ): Promise<R | null> {
-    if (tooLarge(targetFile)) return null;
-    let uploadId = uploadIdsRef.current.get(targetFile);
-    if (!uploadId) {
-      uploadId = crypto.randomUUID();
-      uploadIdsRef.current.set(targetFile, uploadId);
-    }
+  async function start(send: (opts: { file: File; uploadId: string; onProgress: (p: number) => void; signal: AbortSignal }) => Promise<T>) {
+    if (!file || tooLarge(file)) return null;
     const controller = new AbortController();
     abortRef.current = controller;
     setPhase("uploading");
     setProgress(0);
     try {
-      const result = await send({ file: targetFile, uploadId, onProgress: setProgress, signal: controller.signal });
+      const result = await send({ file, uploadId: uploadIdRef.current, onProgress: setProgress, signal: controller.signal });
       setPhase("done");
       return result;
     } catch (error) {
@@ -71,7 +63,7 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
         // REQ-VID-SUBMIT-005: o servidor descarta o ficheiro parcial; o projeto não muda
         toast({ title: "Envio cancelado", description: "O vídeo não foi adicionado ao projeto." });
         setPhase("selected");
-        uploadIdsRef.current.set(targetFile, crypto.randomUUID());
+        uploadIdRef.current = crypto.randomUUID();
         return null;
       }
       const apiErr = videoApiError(error);
@@ -88,7 +80,6 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
             </ToastAction>
           ) : undefined,
         });
-        uploadIdsRef.current.delete(targetFile);
         setFile(null);
         return null;
       }
@@ -102,13 +93,7 @@ export function useVideoUpload<T>(limits: VideoLimits | undefined) {
     }
   }
 
-  async function start(
-    send: (opts: { file: File; uploadId: string; onProgress: (p: number) => void; signal: AbortSignal }) => Promise<T>,
-  ) {
-    return file ? startFor<T>(file, send) : null;
-  }
-
   const cancel = useCallback(() => abortRef.current?.abort(), []);
 
-  return { file, setFile, phase, progress, start, startFor, cancel, reset };
+  return { file, setFile, phase, progress, start, cancel, reset };
 }

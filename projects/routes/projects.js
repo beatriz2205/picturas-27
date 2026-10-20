@@ -27,7 +27,6 @@ const {
 } = require("../utils/project_msg");
 
 const Project = require("../controllers/project");
-const VideoAsset = require("../models/videoAsset");
 const Process = require("../controllers/process");
 const Result = require("../controllers/result");
 const Preview = require("../controllers/preview");
@@ -653,7 +652,6 @@ router.get("/share/:shareId/project", requireAuth,async (req, res) => {
       _id: project._id,
       user_id: project.user_id,
       name: project.name,
-      mediaType: project.mediaType,
       tools: project.tools,
       imgs: [],
       permission: link.permission,
@@ -819,7 +817,6 @@ router.get("/:user/:project", checkSharePermission, async (req, res, next) => {
       const response = {
         _id: project._id,
         name: project.name,
-        mediaType: project.mediaType,
         tools: project.tools,
         imgs: [],
         version: project.version,
@@ -1011,7 +1008,6 @@ router.post("/:user", (req, res, next) => {
   const project = {
     name: req.body.name,
     user_id: req.params.user,
-    mediaType: "images",
     imgs: [],
     tools: [],
   };
@@ -1187,13 +1183,6 @@ router.post(
 
     Project.getOne(req.params.user, req.params.project)
       .then(async (project) => {
-        if (
-          project.mediaType === "videos" ||
-          (await VideoAsset.exists({ project_id: project._id }))
-        ) {
-          return res.status(409).jsonp("Images cannot be added to a video project.");
-        }
-
         const same_name_img = project.imgs.filter(
           (i) => path.basename(i.og_uri) == req.file.originalname
         );
@@ -1206,16 +1195,6 @@ router.post(
         }
 
         try {
-          const claimedProject = await Project.claimMediaType(
-            req.params.user,
-            req.params.project,
-            "images"
-          );
-          if (!claimedProject) {
-            return res.status(409).jsonp("Images cannot be added to a video project.");
-          }
-          project.mediaType = "images";
-
           const data = new FormData();
           data.append("file", req.file.buffer, {
             filename: req.file.originalname,
