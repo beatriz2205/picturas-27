@@ -45,7 +45,7 @@ echo "== US1 — submeter (SUBMIT-001, 004, 006, 007)"
 UP=$(uuid)
 check "MP4 válido → 201" 201 "$(upload "$FREE" "$FREE_TOK" "$PID" ok_720p_30s.mp4 "$UP")"
 VID=$(json 'd["id"]' </tmp/e2e-body.json)
-check "metadados: 30 s, 1280×720, aac" "30.0 1280 720 aac" "$(json 'f"{float(d[\"durationS\"])} {d[\"width\"]} {d[\"height\"]} {d[\"audioCodec\"]}"' </tmp/e2e-body.json)"
+check "metadados: 30 s, 1280×720, aac" "30.0 1280 720 aac" "$(json '" ".join(map(str, [float(d["durationS"]), d["width"], d["height"], d["audioCodec"]]))' </tmp/e2e-body.json)"
 check "segundo vídeo → 201" 201 "$(upload "$FREE" "$FREE_TOK" "$PID" noaudio.mp4)"
 check "projeto tem 2 vídeos" 2 "$($C "$API/projects/$FREE/$PID/videos" -H "Authorization: Bearer $FREE_TOK" | json 'len(d)')"
 check "submissão não gasta operações (remaining_operations=5)" 5 "$($C "$API/users/$FREE" -H "Authorization: Bearer $FREE_TOK" | json 'd["remaining_operations"]')"
@@ -71,7 +71,8 @@ URL=$($C "$API/projects/$FREE/$PID/videos/$VID/url" -H "Authorization: Bearer $F
 check "URL temporário responde 200" 200 "$($C -o /tmp/e2e-dl.mp4 -w '%{http_code}' "$URL")"
 check "ficheiro descarregado igual ao original" "$(sha256sum <"$FIX/ok_720p_30s.mp4" | cut -d' ' -f1)" "$(sha256sum </tmp/e2e-dl.mp4 | cut -d' ' -f1)"
 check "pedido Range (leitor de vídeo) → 206" 206 "$($C -o /dev/null -w '%{http_code}' -H 'Range: bytes=0-1023' "$URL")"
-check "URL válido 15 min (X-Amz-Expires=900)" 900 "$(python3 -c 'import sys,urllib.parse as u; print(u.parse_qs(u.urlparse(sys.argv[1]).query).get("X-Amz-Expires",[""])[0])' "$URL")"
+# URL assinado com SigV2 (aws-sdk v2): "Expires" é o instante de expiração em segundos Unix
+check "URL válido 15 min (Expires ≈ agora + 900 s)" 1 "$(python3 -c 'import sys,time,urllib.parse as u; q=u.parse_qs(u.urlparse(sys.argv[1]).query); e=int(q.get("Expires",["0"])[0]); print(int(abs(e-time.time()-900)<60))' "$URL")"
 check "outro utilizador não obtém o URL" 401 "$($C -o /dev/null -w '%{http_code}' "$API/projects/$FREE/$PID/videos/$VID/url" -H "Authorization: Bearer $PREM_TOK")"
 
 echo "== Premium (limites maiores)"

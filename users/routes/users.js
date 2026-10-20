@@ -6,7 +6,8 @@ const fs = require("fs");
 const https = require("https");
 
 const auth = require("../auth/auth");
-const User = require("../controllers/user");   
+const User = require("../controllers/user");
+const VideoOps = require("../controllers/videoOps");
 
 // lê as chaves/certificados locais (estes ficheiros EXISTEM no api-gateway-ms)
 const key = fs.readFileSync(__dirname + "/../certs/selfsigned.key");
@@ -23,7 +24,9 @@ const httpsAgent = new https.Agent({
 const usersURL = "https://users:10001/";
 
 // URL interna do microserviço de projects
-const projects_ms = "https://projects:10002/projects/";
+// O projects escuta na porta 9001 e monta as rotas na raiz (antes: "https://projects:10002/projects/",
+// que falhava em silêncio e deixava os projetos de contas eliminadas; REQ-VID-COM-035)
+const projects_ms = process.env.PROJECTS_URL || "https://projects:9001/";
 
 const max_free_daily_op = process.env.FREE_DAILY_OP || 5;
 
@@ -125,6 +128,27 @@ router.get("/:user/type/", function (req, res, next) {
       res.status(200).send({ type: user.type });
     })
     .catch((_) => res.status(701).jsonp(`Error acquiring user's information.`));
+});
+
+// Quota de vídeo (spec 000, D8): só chamadas internas do serviço projects, o gateway não as expõe.
+router.post("/:user/video-ops/reserve", async function (req, res) {
+  try {
+    const { status, body } = await VideoOps.reserve(req.params.user, Number(max_free_daily_op));
+    res.status(status).jsonp(body);
+  } catch (err) {
+    console.error("Error reserving video operation:", err);
+    res.status(500).jsonp({ code: "INTERNAL_ERROR" });
+  }
+});
+
+router.post("/:user/video-ops/refund", async function (req, res) {
+  try {
+    const { status, body } = await VideoOps.refund(req.params.user, req.body && req.body.day);
+    res.status(status).jsonp(body);
+  } catch (err) {
+    console.error("Error refunding video operation:", err);
+    res.status(500).jsonp({ code: "INTERNAL_ERROR" });
+  }
 });
 
 // Test if we can process a project based on the number of advanced tools

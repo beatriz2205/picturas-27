@@ -84,6 +84,9 @@ function streamTo(req, url, callerId) {
     params: shareParams(req),
     maxBodyLength: Infinity,
     maxContentLength: Infinity,
+    // Sem redirecionamentos: o follow-redirects do axios guarda o corpo todo em memória para o poder
+    // reenviar, o que anulava o stream (D5; medido no T022 do spec 001)
+    maxRedirects: 0,
     headers: headersFor(req, callerId, {
       "Content-Type": req.headers["content-type"],
       ...(req.headers["content-length"] ? { "Content-Length": req.headers["content-length"] } : {}),
@@ -98,6 +101,17 @@ function streamTo(req, url, callerId) {
 router.get("/:user/video-limits", auth.checkToken, (req, res) => {
   const { callerId } = ids(req);
   forward(res, axios.get(projectsURL + `${callerId}/video-limits`, { httpsAgent, headers: headersFor(req, callerId) }));
+});
+
+// Notificações pendentes de tarefas de vídeo (REQ-VID-COM-015)
+router.get("/:user/video-notifications", auth.checkToken, (req, res) => {
+  const { callerId } = ids(req);
+  forward(res, axios.get(projectsURL + `${callerId}/video-notifications`, { httpsAgent, headers: headersFor(req, callerId) }));
+});
+
+router.post("/:user/video-notifications/ack", auth.checkToken, (req, res) => {
+  const { callerId } = ids(req);
+  forward(res, axios.post(projectsURL + `${callerId}/video-notifications/ack`, req.body, { httpsAgent, headers: headersFor(req, callerId) }));
 });
 
 router.post("/:user/video-project", auth.checkToken, async (req, res) => {
@@ -155,6 +169,56 @@ router.delete("/:user/:project/videos/:video", auth.checkToken, (req, res) => {
   forward(
     res,
     axios.delete(projectsURL + `${ownerId}/${req.params.project}/videos/${req.params.video}`, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+// ---- tarefas de vídeo (specs/000-video-common/contracts/public-api.md)
+
+router.post("/:user/:project/video-tasks", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.post(projectsURL + `${ownerId}/${req.params.project}/video-tasks`, req.body, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+router.get("/:user/:project/video-tasks", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/video-tasks`, {
+      httpsAgent,
+      params: { ...shareParams(req), status: req.query.status },
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+router.get("/:user/:project/video-tasks/:task", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/video-tasks/${req.params.task}`, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+router.post("/:user/:project/video-tasks/:task/cancel", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.post(projectsURL + `${ownerId}/${req.params.project}/video-tasks/${req.params.task}/cancel`, {}, {
       httpsAgent,
       params: shareParams(req),
       headers: headersFor(req, callerId),

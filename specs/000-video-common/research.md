@@ -200,6 +200,10 @@ como o ambiente de referência.
   `processing`. O *worker* aplica o mesmo prazo ao processo FFmpeg (`subprocess` com *timeout*).
 - O *watchdog* do `projects` (`setInterval` de 60 s) passa a `failed`, com motivo `timeout`, as
   tarefas com `deadlineAt` ultrapassado e publica o cancelamento ao *worker*.
+- O mesmo *watchdog* passa a `failed`, com motivo `queue_timeout` e devolução da operação, as tarefas
+  em `queued` há mais de 24 h (`VIDEO_QUEUE_MAX_MS`). Sem isto, uma tarefa cuja mensagem ou eventos se
+  perdessem ficaria "Em fila" para sempre e ocuparia uma vaga de tarefa ativa (decisão de 2026-10-20,
+  depois do teste de carga).
 - No arranque, o `projects` não muda as tarefas `processing`: os *workers* podem continuar vivos. Se a
   mensagem voltar a ser entregue (`redelivered`), o *worker* falha a tarefa (D3). O *watchdog* trata as
   restantes. Se for o *worker* a cair, a mensagem volta à fila e cai na regra de D3.

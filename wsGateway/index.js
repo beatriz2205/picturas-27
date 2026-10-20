@@ -59,6 +59,16 @@ function process_msg() {
         const status = msg_content.status;
         const user = msg_content.user;
 
+        // Tarefas de vídeo: ao utilizador que iniciou e a quem tem o projeto aberto
+        // (specs/000-video-common/contracts/ws-events.md)
+        if (msg_content.type === "video-task") {
+            if (msg_content.userId && msg_content.task) {
+                io.to(msg_content.userId).to(`project:${msg_content.projectId}`)
+                    .emit("video-task-update", msg_content.task);
+            }
+            return;
+        }
+
         console.log('Received msg:', JSON.stringify(msg_content));
 
         if (/update-client-preview/.test(msg_id)) {

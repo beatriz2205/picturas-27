@@ -11,6 +11,8 @@ import { getErrorMessage } from "@/lib/error-messages";
 import { useProjectVideos } from "@/lib/queries/videos";
 import { useDeleteVideo } from "@/lib/mutations/videos";
 import { fetchVideoUrl, formatCodecs, formatDuration, formatSize, ProjectVideo } from "@/lib/videos";
+import { VideoTaskPanel } from "./video-task-panel";
+import { VideoToolMenu } from "./video-tool-menu";
 
 interface Props {
   pid: string;
@@ -19,35 +21,51 @@ interface Props {
   canEdit: boolean;
 }
 
-// Vídeos do projeto com os seus metadados (REQ-VID-COM-002, UC-VID-001 passo 6)
+// Vídeos do projeto com os seus metadados e as tarefas de vídeo
+// (REQ-VID-COM-002, COM-031; UC-VID-001 passo 6)
 export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
   const session = useSession();
   const access = { uid: session.user._id, pid, token: session.token, ownerId, shareId };
   const videos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
   const [playing, setPlaying] = useState<ProjectVideo | null>(null);
-
-  if (!videos.data || videos.data.length === 0) return null;
+  const list = videos.data ?? [];
+  const names = new Map(list.map((v) => [v.id, v.name]));
 
   return (
-    <section className="border-b border-sidebar-border px-2 md:px-3 xl:px-4 py-3">
-      <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Vídeos ({videos.data.length})</h2>
-      <div className="flex gap-3 overflow-x-auto pb-1">
-        {videos.data.map((v) => (
-          <VideoCard key={v.id} video={v} access={access} canEdit={canEdit} onPlay={() => setPlaying(v)} />
-        ))}
-      </div>
+    <>
+      {list.length > 0 && (
+        <section className="border-b border-sidebar-border px-2 md:px-3 xl:px-4 py-3">
+          <h2 className="mb-2 text-sm font-semibold text-muted-foreground">Vídeos ({list.length})</h2>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {list.map((v) => (
+              <VideoCard
+                key={v.id}
+                video={v}
+                sourceName={v.sourceVideoId ? names.get(v.sourceVideoId) ?? null : undefined}
+                access={access}
+                canEdit={canEdit}
+                onPlay={() => setPlaying(v)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      <VideoTaskPanel pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} onOpenResult={setPlaying} />
       <VideoPlayerDialog video={playing} access={access} onClose={() => setPlaying(null)} />
-    </section>
+    </>
   );
 }
 
 function VideoCard({
   video,
+  sourceName,
   access,
   canEdit,
   onPlay,
 }: {
   video: ProjectVideo;
+  // nome do vídeo de origem (resultados); null se a origem foi removida
+  sourceName?: string | null;
   access: { uid: string; pid: string; token: string; ownerId?: string; shareId?: string };
   canEdit: boolean;
   onPlay: () => void;
@@ -91,6 +109,11 @@ function VideoCard({
           {video.name}
         </p>
       </div>
+      {video.origin === "task" && (
+        <p className="-mt-1 truncate text-xs text-muted-foreground" title={sourceName ?? undefined}>
+          {sourceName ? `Resultado de ${sourceName}` : "Resultado (origem removida)"}
+        </p>
+      )}
       <dl className="grid grid-cols-2 gap-x-2 text-xs text-muted-foreground">
         <dt>Duração</dt>
         <dd className="text-right">{formatDuration(video.durationS)}</dd>
@@ -108,6 +131,7 @@ function VideoCard({
         <Button size="icon" variant="outline" className="size-8" title="Descarregar" onClick={download} disabled={downloading}>
           {downloading ? <LoaderCircle className="animate-spin" /> : <Download />}
         </Button>
+        {video.kind === "video" && <VideoToolMenu video={video} access={access} canEdit={canEdit} />}
         {canEdit && (
           <Button size="icon" variant="outline" className="size-8" title="Remover" onClick={handleRemove} disabled={remove.isPending}>
             {remove.isPending ? <LoaderCircle className="animate-spin" /> : <Trash2 />}

@@ -1,6 +1,7 @@
 import { api } from "./axios";
 import axios from "axios";
 import JSZip from "jszip";
+import { fetchProjectVideos, fetchVideoUrl } from "./videos";
 import { ToolNames, ToolParams } from "./tool-types";
 import { PDFDocument } from "pdf-lib";
 
@@ -407,6 +408,15 @@ export const downloadProjectImages = async ({
       imageName: image.name,
     });
     zip.file(name, file);
+  }
+
+  // Vídeos e resultados de vídeo na pasta videos/ (REQ-VID-COM-033)
+  const videos = await fetchProjectVideos({ uid, pid, token, ownerId, shareId });
+  for (const video of videos) {
+    const { url } = await fetchVideoUrl({ uid, pid, token, ownerId, shareId, videoId: video.id, download: true });
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Não foi possível descarregar o vídeo ${video.name}`);
+    zip.file(`videos/${video.name}`, await resp.blob());
   }
 
   const blob = await zip.generateAsync({ type: "blob" });

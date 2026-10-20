@@ -51,7 +51,7 @@ const {
 } = require("../middleware/shareAuth");
 
 const { requireProjectVersion } = require("../middleware/projectVersion");
-const { deleteProjectVideos } = require("./videos");
+const { deleteProjectVideos, deleteUserVideoTasks } = require("./videos");
 
 const storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
@@ -511,8 +511,8 @@ async function deleteProjectAndResources(userId, projectId) {
     await Preview.delete(p.user_id, p.project_id, p.img_id);
   }
 
-  // apagar vídeos e resultados de vídeo (REQ-VID-COM-035)
-  await deleteProjectVideos(userId, projectId);
+  // apagar vídeos, resultados e tarefas de vídeo (REQ-VID-COM-035)
+  await deleteProjectVideos(userId, projectId, { deleteTasks: true });
 
   // apagar o próprio projeto
   await Project.delete(userId, projectId);
@@ -1778,6 +1778,7 @@ router.delete("/:user", async (req, res, next) => {
     for (const p of projects) {
       await deleteProjectAndResources(userId, p._id);
     }
+    await deleteUserVideoTasks(userId);
 
     return res.sendStatus(204);
   } catch (err) {

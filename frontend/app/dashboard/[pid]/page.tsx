@@ -7,6 +7,7 @@ import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
 import { ProjectVideoList } from "@/components/project-page/project-video-list";
+import { useProjectVideos } from "@/lib/queries/videos";
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "@/components/toolbar/toolbar";
 import { ShareProjectDialog } from "@/components/projects/share-dialog";
@@ -83,6 +84,7 @@ export default function Project({
   );
   const downloadProjectResults = useDownloadProjectResults();
   const downloadProjectPdf = useDownloadProjectPdf();
+  const projectVideos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
   const router = useRouter();
   const path = usePathname();
   const sidebar = useSidebar();
@@ -809,6 +811,10 @@ const handleCancel = () => {
                                         mode === "results"
                                           ? `Results for ${project.data.name} downloaded as PDF.`
                                           : `Project ${project.data.name} downloaded as PDF.`,
+                                      // REQ-VID-COM-033: o PDF só tem imagens
+                                      description: projectVideos.data?.length
+                                        ? "Os vídeos não são incluídos no PDF. Use o ZIP para os descarregar."
+                                        : undefined,
                                     });
                                   },
                                 },

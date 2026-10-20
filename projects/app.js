@@ -18,6 +18,12 @@ const db = mongoose.connection;
 db.on("error", console.error.bind(console, "Error connecting to Mongodb"));
 db.once("open", () => {
   console.log("Mongodb connection successful");
+  // Coleções de vídeo: alinhar os índices com os modelos. O Mongoose cria índices em falta mas não
+  // substitui um índice com o mesmo nome e opções diferentes (por exemplo, o índice de upload_id que
+  // passou de sparse a parcial), o que dava "duplicate key" no segundo resultado de um projeto.
+  for (const model of [require("./models/videoAsset"), require("./models/videoTask")]) {
+    model.syncIndexes().catch((e) => console.error("[video] syncIndexes", model.modelName, e.message));
+  }
 });
 
 var app = express();
@@ -38,6 +44,11 @@ app.use("/", projectsRouter);
 
 // Start the message processing
 process_msg();
+
+// Vídeo: eventos dos workers, tempo máximo e limpeza (spec 000, D3, D11)
+require("./video/events").startEventConsumer();
+require("./video/watchdog").startWatchdog();
+require("./video/janitor").startJanitor();
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

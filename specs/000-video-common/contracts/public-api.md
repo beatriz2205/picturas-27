@@ -43,8 +43,10 @@ As rotas `/:user/video-limits` e `/:user/video-notifications*` têm de ser decla
 ```json
 { "profile": "free",
   "limits": { "maxBytes": 104857600, "maxDurationS": 60, "maxWidth": 1920, "maxHeight": 1080, "maxActiveTasks": 1 },
-  "remainingOperations": 3, "dailyOperations": 5, "activeTasks": 0 }
+  "remainingOperations": 3, "dailyOperations": 5, "activeTasks": 0, "tools": ["trim", "convert"] }
 ```
+
+`tools` lista as ferramentas que o servidor aceita (`VIDEO_TOOLS`); o frontend só mostra essas.
 
 `remainingOperations` e `dailyOperations` são `null` no Premium.
 
@@ -94,7 +96,7 @@ ferramenta (specs 002 a 005).
 
 ```json
 // TaskDTO
-{ "id": "6711…", "tool": "trim", "status": "processing", "progress": 42,
+{ "id": "6711…", "tool": "trim", "projectId": "670e…", "status": "processing", "progress": 42,
   "sourceVideoId": "670f…", "outputName": "clip.mp4", "params": { "startS": 10, "endS": 40, "height": 720 },
   "reason": null, "resultIds": [], "startedBy": "66aa…",
   "queuedAt": "…", "startedAt": "…", "finishedAt": null }
@@ -103,7 +105,7 @@ ferramenta (specs 002 a 005).
 
 ## Notificações pendentes
 
-`GET /projects/:user/video-notifications` → `200 [TaskDTO]`: tarefas iniciadas por `:user` em estado
-final com `notifiedAt = null`.
+`GET /projects/:user/video-notifications` → `200 [TaskDTO + ownerId]`: tarefas iniciadas por `:user` em
+estado final com `notifiedAt = null`. O `ownerId` permite abrir o projeto (pode ser de outro utilizador).
 
 `POST /projects/:user/video-notifications/ack` com `{"taskIds": ["…"]}` → `204` (`COM-015`).

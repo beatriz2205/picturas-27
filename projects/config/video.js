@@ -20,6 +20,8 @@ module.exports = {
   TIMEOUT: {
     minMs: Number(process.env.VIDEO_TIMEOUT_MIN_MS) || 15 * 60e3,
     perVideoMinuteMs: 15 * 60e3,
+    // Tempo máximo em fila: uma tarefa cujas mensagens se perderam não fica "Em fila" para sempre
+    maxQueuedMs: Number(process.env.VIDEO_QUEUE_MAX_MS) || 24 * 3600e3,
   },
 
   // RNG-06 / REQ-VID-COM-038
@@ -38,6 +40,11 @@ module.exports = {
 
   UPLOAD_TMP_DIR: process.env.VIDEO_UPLOAD_TMP_DIR || "/app/images/tmp/uploads",
 
-  // Ferramentas de vídeo: preenchido pelos specs 002 a 005
-  VIDEO_TOOLS: {},
+  // Ferramentas de vídeo: preenchido pelos specs 002 a 005. Cada entrada:
+  //   queue      fila do worker (rabbitMQ/definitions.json e video/broker.js)
+  //   validate   (params, video, profile) → {params} ou VideoError INVALID_PARAMS
+  //   outputs    tipos de resultado ("video", "detections")
+  //   dedup      true para recusar pedidos idênticos ativos (DUPLICATE_TASK, TRIM-008)
+  // O "noop" (worker de teste, REQ-VID-COM-047) só existe fora de produção.
+  VIDEO_TOOLS: process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") },
 };

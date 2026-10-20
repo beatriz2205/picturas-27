@@ -10,12 +10,15 @@ const VideoAsset = require("../models/videoAsset");
 const { checkSharePermission, requireEditPermission } = require("../middleware/shareAuth");
 const { getCallerId } = require("../utils/caller");
 const { httpsAgent } = require("../utils/httpsAgent");
-const { MULTIPART_OVERHEAD_BYTES, URL_EXPIRES_S } = require("../config/video");
+const { MULTIPART_OVERHEAD_BYTES, URL_EXPIRES_S, VIDEO_TOOLS } = require("../config/video");
 const { VideoError, toResponse } = require("../video/errors");
 const { limitsFor, validateInput, validateProfile, sizeError } = require("../video/limits");
 const { probe, checkIntegrity } = require("../video/probe");
 const { receiveUpload, uniqueName } = require("../video/upload");
 const storage = require("../video/storage");
+const VideoTask = require("../models/videoTask");
+const tasks = require("../video/taskService");
+const { toVideoDTO, toTaskDTO } = require("../video/messages");
 
 const router = express.Router();
 
@@ -39,28 +42,6 @@ async function callerProfile(req) {
     throw new VideoError("AUTH_REQUIRED", 401, "Os vídeos só estão disponíveis para utilizadores registados. Crie uma conta ou inicie sessão.");
   }
   return { callerId, profile: type };
-}
-
-function toVideoDTO(v) {
-  return {
-    id: String(v._id),
-    kind: v.kind,
-    origin: v.origin,
-    name: v.name,
-    sizeBytes: v.size_bytes,
-    durationS: v.duration_s,
-    width: v.width,
-    height: v.height,
-    fps: v.fps,
-    container: v.container,
-    videoCodec: v.video_codec,
-    audioCodec: v.audio_codec,
-    acceptedAsInput:
-      v.kind === "video" && v.container === "mp4" && v.video_codec === "h264" && (v.audio_codec === "aac" || v.audio_codec === null),
-    sourceVideoId: v.source_video_id ? String(v.source_video_id) : null,
-    sourceTaskId: v.source_task_id ? String(v.source_task_id) : null,
-    createdAt: v.createdAt,
-  };
 }
 
 // Recusa antes de ler o corpo quando o tamanho declarado excede o limite (REQ-VID-SUBMIT-003).
@@ -137,16 +118,70 @@ async function loadVideoOr404(projectId, videoId) {
 // ---------------------------------------------------------------- rotas ao nível do utilizador
 // Declaradas antes de "/:user/:project" (contracts/public-api.md).
 
-// Limites do perfil de quem faz o pedido (REQ-VID-COM-023; usado pelo frontend para SUBMIT-003)
+// Estado consultado pelos workers antes de começar (contracts/internal-api.md). Não passa pelo gateway.
+router.get("/internal/video-tasks/:task", async (req, res) => {
+  const token = process.env.VIDEO_INTERNAL_TOKEN;
+  if (!token || req.headers["x-internal-token"] !== token) return res.status(401).json({ code: "AUTH_REQUIRED" });
+  if (!mongoose.isValidObjectId(req.params.task)) return res.status(404).json({ code: "NOT_FOUND" });
+  const task = await VideoTask.findById(req.params.task, { status: 1, deadlineAt: 1 }).lean();
+  if (!task) return res.status(404).json({ code: "NOT_FOUND" });
+  res.status(200).json({ status: task.status, deadlineAt: task.deadlineAt });
+});
+
+async function remainingOperations(callerId) {
+  try {
+    const resp = await axios.get(`${USERS_MS}${callerId}`, { httpsAgent, timeout: 3000 });
+    return resp.data.remaining_operations ?? null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Limites do perfil, operações restantes e tarefas ativas de quem faz o pedido
+// (REQ-VID-COM-018, COM-023; usado pelo frontend para SUBMIT-003 e pelo menu de ferramentas)
 router.get("/:user/video-limits", async (req, res) => {
   try {
-    const { profile } = await callerProfile(req);
+    const { callerId, profile } = await callerProfile(req);
     const l = limitsFor(profile);
+    const [remaining, activeTasks] = await Promise.all([
+      profile === "free" ? remainingOperations(callerId) : null,
+      VideoTask.countDocuments({ user_id: callerId, status: { $in: tasks.ACTIVE } }),
+    ]);
     res.status(200).json({
       profile,
       limits: { maxBytes: l.maxBytes, maxDurationS: l.maxDurationS, maxWidth: l.maxWidth, maxHeight: l.maxHeight, maxActiveTasks: l.maxActiveTasks },
+      remainingOperations: remaining,
       dailyOperations: l.dailyOps,
+      activeTasks,
+      // ferramentas aceites por este servidor (o "noop" só fora de produção)
+      tools: Object.keys(VIDEO_TOOLS),
     });
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Notificações pendentes: tarefas iniciadas pelo utilizador já terminadas e ainda não mostradas (D14, REQ-VID-COM-015)
+router.get("/:user/video-notifications", async (req, res) => {
+  try {
+    const { callerId } = await callerProfile(req);
+    const pending = await VideoTask.find({ user_id: callerId, status: { $in: tasks.FINAL }, notifiedAt: null })
+      .sort({ finishedAt: -1 })
+      .limit(50);
+    res.status(200).json(pending.map((t) => ({ ...toTaskDTO(t), ownerId: String(t.owner_id) })));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+router.post("/:user/video-notifications/ack", async (req, res) => {
+  try {
+    const { callerId } = await callerProfile(req);
+    const ids = Array.isArray(req.body && req.body.taskIds) ? req.body.taskIds.filter((id) => mongoose.isValidObjectId(id)) : [];
+    if (ids.length) {
+      await VideoTask.updateMany({ _id: { $in: ids }, user_id: callerId, notifiedAt: null }, { $set: { notifiedAt: new Date() } });
+    }
+    res.sendStatus(204);
   } catch (err) {
     toResponse(res, err);
   }
@@ -322,7 +357,8 @@ router.delete("/:user/:project/videos/:video", checkSharePermission, requireEdit
     await callerProfile(req);
     await loadProjectOr404(req.params.user, req.params.project);
     const video = await loadVideoOr404(req.params.project, req.params.video);
-    // TODO(spec 000, T046): cancelar as tarefas ativas com origem neste vídeo (REQ-VID-COM-017)
+    // Cancela as tarefas ativas com origem neste vídeo antes de o apagar (REQ-VID-COM-017)
+    await tasks.cancelActive({ source_video_id: video._id }, "source_video_removed");
     await storage.remove(req.params.user, video.storage_key);
     await VideoAsset.deleteOne({ _id: video._id });
     res.sendStatus(204);
@@ -331,13 +367,89 @@ router.delete("/:user/:project/videos/:video", checkSharePermission, requireEdit
   }
 });
 
-// Usado por routes/projects.js na remoção de projetos e de contas (REQ-VID-COM-034, COM-035)
-async function deleteProjectVideos(ownerId, projectId) {
+// ---------------------------------------------------------------- tarefas
+
+async function loadTaskOr404(projectId, taskId) {
+  if (!mongoose.isValidObjectId(taskId)) throw new VideoError("NOT_FOUND", 404, "Tarefa não encontrada.");
+  const task = await VideoTask.findOne({ _id: taskId, project_id: projectId });
+  if (!task) throw new VideoError("NOT_FOUND", 404, "Tarefa não encontrada.");
+  return task;
+}
+
+// Iniciar uma tarefa: 202 com a tarefa em fila (plan.md, "Fluxo de aceitação"; REQ-VID-COM-011, COM-036)
+router.post("/:user/:project/video-tasks", checkSharePermission, requireEditPermission, async (req, res) => {
+  try {
+    const { callerId, profile } = await callerProfile(req);
+    await loadProjectOr404(req.params.user, req.params.project);
+    const task = await tasks.accept({
+      callerId,
+      profile,
+      ownerId: req.params.user,
+      projectId: req.params.project,
+      body: req.body || {},
+    });
+    res.status(202).json(toTaskDTO(task));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Tarefas do projeto, mais recentes primeiro (REQ-VID-COM-031)
+router.get("/:user/:project/video-tasks", checkSharePermission, async (req, res) => {
+  try {
+    await loadProjectOr404(req.params.user, req.params.project);
+    const filter = { project_id: req.params.project };
+    if (req.query.status === "active") filter.status = { $in: tasks.ACTIVE };
+    else if (req.query.status === "final") filter.status = { $in: tasks.FINAL };
+    const list = await VideoTask.find(filter).sort({ queuedAt: -1 }).limit(200);
+    res.status(200).json(list.map(toTaskDTO));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+router.get("/:user/:project/video-tasks/:task", checkSharePermission, async (req, res) => {
+  try {
+    await loadProjectOr404(req.params.user, req.params.project);
+    res.status(200).json(toTaskDTO(await loadTaskOr404(req.params.project, req.params.task)));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Cancelar: imediato para o utilizador, best effort no worker (D12; REQ-VID-COM-016)
+router.post("/:user/:project/video-tasks/:task/cancel", checkSharePermission, requireEditPermission, async (req, res) => {
+  try {
+    await callerProfile(req);
+    await loadProjectOr404(req.params.user, req.params.project);
+    const task = await loadTaskOr404(req.params.project, req.params.task);
+    const cancelled = await tasks.cancel(task._id, "user_cancelled");
+    if (!cancelled) {
+      const current = await VideoTask.findById(task._id);
+      throw new VideoError("TASK_FINAL", 409, "A tarefa já terminou e não pode ser cancelada.", { task: toTaskDTO(current) });
+    }
+    res.status(200).json(toTaskDTO(cancelled));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Usado por routes/projects.js na remoção de projetos e de contas (REQ-VID-COM-017, COM-034, COM-035).
+// Na eliminação da conta (deleteTasks) os registos das tarefas também são apagados.
+async function deleteProjectVideos(ownerId, projectId, { deleteTasks = false } = {}) {
+  await tasks.cancelActive({ project_id: projectId }, "project_removed");
   const videos = await VideoAsset.find({ project_id: projectId });
   for (const v of videos) {
     await storage.remove(ownerId, v.storage_key).catch((e) => console.error("[video] falha ao apagar objeto", v.storage_key, e.message));
   }
   await VideoAsset.deleteMany({ project_id: projectId });
+  if (deleteTasks) await VideoTask.deleteMany({ project_id: projectId });
 }
 
-module.exports = { router, deleteProjectVideos, toVideoDTO };
+// Eliminação da conta: tarefas que o utilizador iniciou em projetos de outros (REQ-VID-COM-035)
+async function deleteUserVideoTasks(userId) {
+  await tasks.cancelActive({ user_id: userId }, "project_removed");
+  await VideoTask.deleteMany({ user_id: userId });
+}
+
+module.exports = { router, deleteProjectVideos, deleteUserVideoTasks, toVideoDTO };

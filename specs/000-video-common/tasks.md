@@ -19,29 +19,29 @@ aceitação do Cap. 5 são testes.
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Criar `projects/config/video.js` com `PROFILE_LIMITS`, `PRESET_HEIGHTS`, `INPUT_MATRIX`,
+- [X] T001 [P] Criar `projects/config/video.js` com `PROFILE_LIMITS`, `PRESET_HEIGHTS`, `INPUT_MATRIX`,
   `TIMEOUT`, `CLEANUP`, `TASK_RETENTION_S`, `URL_EXPIRES_S`, `PRIORITY` e `VIDEO_TOOLS` vazio
   (data-model.md). Requisitos: RNG-02 a RNG-06.
-- [ ] T002 [P] Acrescentar a `rabbitMQ/definitions.json`:
+- [X] T002 [P] Acrescentar a `rabbitMQ/definitions.json`:
   - as filas duráveis `video_noop_queue`, `video_trim_queue`, `video_convert_queue`,
     `video_filter_queue` e `video_detect_queue`, com `arguments: {"x-max-priority": 10}`;
   - a fila durável `video_events_queue`;
   - o *exchange fanout* `video_cancel`;
   - os *bindings* das filas ao *exchange* `picturas`, como as existentes.
   (D3, D12)
-- [ ] T003 [P] `projects/Dockerfile`: instalar `ffmpeg` (`apt-get update && apt-get install -y
+- [X] T003 [P] `projects/Dockerfile`: instalar `ffmpeg` (`apt-get update && apt-get install -y
   --no-install-recommends ffmpeg`). (D6)
-- [ ] T004 [P] `imageStorageService/utils/stages.js`: acrescentar `video_src`, `video_out`, `video_tmp`.
-- [ ] T005 [P] Configurar testes:
+- [X] T004 [P] `imageStorageService/utils/stages.js`: acrescentar `video_src`, `video_out`, `video_tmp`.
+- [X] T005 [P] Configurar testes:
   - `"test": "node --test tests/"` em `projects/package.json` e `users/package.json`;
   - `mongodb-memory-server` como `devDependency`;
   - `Tools/video_utils/requirements-dev.txt` com `pytest`.
   (D15)
-- [ ] T006 [P] `docker-compose.yaml`:
+- [X] T006 [P] `docker-compose.yaml`:
   - variáveis `VIDEO_INTERNAL_TOKEN` no `projects` e nos *workers* de vídeo;
   - volume `video_tmp` para `/tmp/video` nos *workers*;
   - serviço `video_noop_worker` (contexto `./Tools`, `dockerfile: video_noop/Dockerfile`).
-- [ ] T007 [P] `nginx/nginx.conf`: `location ~ ^/api-gateway/projects/[^/]+/[^/]+/videos$` com
+- [X] T007 [P] `nginx/nginx.conf`: `location ~ ^/api-gateway/projects/[^/]+/[^/]+/videos$` com
   `client_max_body_size 510m`, `proxy_request_buffering off` e `proxy_read_timeout 600s`, e o mesmo
   `proxy_pass` e os mesmos cabeçalhos de `/api-gateway/`. Acrescentar também `/api-gateway/projects/[^/]+/video-project$`
   (spec 001). (D5)
@@ -52,18 +52,18 @@ aceitação do Cap. 5 são testes.
 
 ### Modelos e configuração
 
-- [ ] T008 Criar `projects/models/videoAsset.js` com os campos, os índices e o virtual
+- [X] T008 Criar `projects/models/videoAsset.js` com os campos, os índices e o virtual
   `acceptedAsInput` do data-model.md. Requisitos: COM-026, SUBMIT-009, CONV-004.
-- [ ] T009 Criar `projects/models/videoTask.js` com:
+- [X] T009 Criar `projects/models/videoTask.js` com:
   - os campos do data-model.md;
   - o índice único esparso `slotKey`;
   - o TTL de 30 dias em `finishedAt`;
   - o índice `{status, deadlineAt}`;
   - `dedupKey`.
   Requisitos: COM-011, COM-012, COM-043, COM-048.
-- [ ] T010 [P] Criar `projects/video/errors.js`: classe `VideoError(code, http, message, extra)` e
+- [X] T010 [P] Criar `projects/video/errors.js`: classe `VideoError(code, http, message, extra)` e
   `toResponse(err)` no formato de `contracts/public-api.md`. Requisito: COM-007.
-- [ ] T011 [P] Criar `projects/video/messages.js` com:
+- [X] T011 [P] Criar `projects/video/messages.js` com:
   - os textos PT por `code` (erros de API e `reason.code` dos *workers*);
   - `buildTaskMessage(task, video, url)`;
   - `toTaskDTO(task)` e `toVideoDTO(asset)`.
@@ -71,25 +71,25 @@ aceitação do Cap. 5 são testes.
 
 ### Validação
 
-- [ ] T012 Criar `projects/video/probe.js`:
+- [X] T012 Criar `projects/video/probe.js`:
   - `probe(filePath)` executa `ffprobe -v error -print_format json -show_format -show_streams` (com
     `child_process.execFile` e *timeout* de 10 s) e devolve
     `{container, majorBrand, videoCodec, audioCodec, durationS, width, height, fps, sizeBytes}`;
   - `checkIntegrity(filePath)` executa `ffprobe -count_packets -select_streams v:0`.
   Requisito: COM-003.
-- [ ] T013 Criar `projects/video/limits.js`:
+- [X] T013 Criar `projects/video/limits.js`:
   - `validateInput(meta)`: matriz de formatos, devolve `UNSUPPORTED_FORMAT` ou `CORRUPTED_FILE`;
   - `validateProfile(meta, profile)`: o primeiro limite excedido dá `VIDEO_TOO_LARGE`,
     `VIDEO_TOO_LONG` ou `RESOLUTION_TOO_HIGH`, com `limit` e `upgrade`, e aceita vídeos verticais;
   - `allowedHeights(meta, profile)` (COM-010);
   - `timeoutMs(durationS)`.
   Requisitos: COM-003 a COM-008, COM-010, COM-024, COM-040, COM-045.
-- [ ] T014 [P] Criar `projects/tests/limits.test.js`:
+- [X] T014 [P] Criar `projects/tests/limits.test.js`:
   - cada limite de cada perfil no valor exato e 1 unidade acima;
   - H.265, MOV, MP4 sem áudio, áudio MP3 e vídeo vertical 1080 × 1920 no Free;
   - `allowedHeights` para 4K Free, 4K Premium e 720p;
   - `timeoutMs(30) = 15 min` e `timeoutMs(600) = 150 min`.
-- [ ] T015 [P] Criar `projects/tests/fixtures/make-videos.sh`, que gera com `ffmpeg -f lavfi`
+- [X] T015 [P] Criar `projects/tests/fixtures/make-videos.sh`, que gera com `ffmpeg -f lavfi`
   (`testsrc2` + `sine`), em `projects/tests/fixtures/out/` (ignorado no git):
   - `ok_720p_30s.mp4` (H.264/AAC);
   - `ok_1080p_60s.mp4`;
@@ -107,10 +107,10 @@ aceitação do Cap. 5 são testes.
 
 ### Quota (users)
 
-- [ ] T016 `users/routes/users.js`: `POST /:user/video-ops/reserve` e `POST /:user/video-ops/refund`
+- [X] T016 `users/routes/users.js`: `POST /:user/video-ops/reserve` e `POST /:user/video-ops/refund`
   com as atualizações atómicas de D8 (constante `max_free_daily_op` existente). Declarar antes de
   `/:user/process/...`. Requisitos: COM-021, COM-022, COM-051.
-- [ ] T017 [P] Criar `users/tests/videoOps.test.js`:
+- [X] T017 [P] Criar `users/tests/videoOps.test.js`:
   - reserva Free até 5 e a 6.ª dá `409`;
   - 10 reservas concorrentes com 1 restante, só 1 aceite;
   - devolução no dia da reserva;
@@ -121,17 +121,17 @@ aceitação do Cap. 5 são testes.
 
 ### Armazenamento
 
-- [ ] T018 Criar no `imageStorageService`:
+- [X] T018 Criar no `imageStorageService`:
   - `route/video.js` e `services/uploadVideo.js`: `multer.diskStorage` em `/tmp/uploads`,
     `s3.upload({Body: fs.createReadStream(path), ContentType}, {partSize: 10MB, queueSize: 4})`,
     resposta `{key}` e remoção do ficheiro local em `finally`;
   - o `app.use("/video", ...)` em `server.js`;
   - `GET /health`, que responde `200` se `s3.headBucket` ou `listBuckets` funcionar.
   Requisito: COM-009.
-- [ ] T019 `imageStorageService/services/getPresignedUrl.js` e `route/images.js`: parâmetros opcionais
+- [X] T019 `imageStorageService/services/getPresignedUrl.js` e `route/images.js`: parâmetros opcionais
   `expires` (segundos) e `download` (nome, gera `ResponseContentDisposition`). Por omissão mantém-se
   60 min, sem regressão nas imagens. Requisitos: COM-030, COM-050.
-- [ ] T020 Criar `projects/video/storage.js`:
+- [X] T020 Criar `projects/video/storage.js`:
   - `uploadFile(ownerId, projectId, stage, filePath, mime)`, com *stream* `form-data` e `axios` com
     `maxBodyLength: Infinity`;
   - `internalUrl(..., expiresS)` e `publicUrl(..., expiresS, downloadName)`;
@@ -140,15 +140,15 @@ aceitação do Cap. 5 são testes.
 
 ### Mensagens e eventos
 
-- [ ] T021 `projects/utils/project_msg.js`:
+- [X] T021 `projects/utils/project_msg.js`:
   - `send_video_task(queue, msg, priority)` com `persistent: true` e `priority`;
   - `send_video_ws(userId, projectId, taskDTO)` com `type: "video-task"` para `ws_queue`;
   - `send_video_cancel(taskId)` para o *exchange* `video_cancel`;
   - `isConnected()`.
   Ver `projects/utils/rabbit_mq.js` para o canal. Requisitos: COM-009, COM-019.
-- [ ] T022 Criar `projects/video/quota.js`: `reserve(userId)` → `{state, day}` e `refund(userId, day)`,
+- [X] T022 Criar `projects/video/quota.js`: `reserve(userId)` → `{state, day}` e `refund(userId, day)`,
   que chamam o `users` com o `httpsAgent` existente (`projects/utils/httpsAgent.js`).
-- [ ] T023 Criar `projects/video/taskService.js`:
+- [X] T023 Criar `projects/video/taskService.js`:
   - `accept(ctx)` segue os 11 passos do plan.md;
   - `transition(taskId, from[], to, set)` com `findOneAndUpdate` condicional (D7);
   - `complete(taskId, outputs, metrics)` cria os `videoAsset` e consolida a quota;
@@ -158,7 +158,7 @@ aceitação do Cap. 5 são testes.
     `console`.
   Requisitos: COM-011, COM-012, COM-016, COM-018, COM-020 a COM-022, COM-025, COM-026, COM-048,
   COM-051.
-- [ ] T024 [P] Criar `projects/tests/taskService.test.js` (com `mongodb-memory-server` e *mocks* de
+- [X] T024 [P] Criar `projects/tests/taskService.test.js` (com `mongodb-memory-server` e *mocks* de
   quota e de RabbitMQ):
   - limite de tarefas ativas Free 1 e Premium 3, incluindo pedidos concorrentes;
   - transição perdida ignorada;
@@ -167,31 +167,31 @@ aceitação do Cap. 5 são testes.
   - rejeição por fila indisponível sem tarefa nem reserva;
   - devolução quando a publicação falha.
   Requisitos: COM-009, COM-012, COM-018, COM-022, COM-051.
-- [ ] T025 Criar `projects/video/events.js`, consumidor de `video_events_queue` com `ack` manual:
+- [X] T025 Criar `projects/video/events.js`, consumidor de `video_events_queue` com `ack` manual:
   - `started` → `processing` + `deadlineAt`;
   - `progress` → `$set progress` só se a tarefa estiver `processing` e o progresso for maior;
   - `completed` → `complete`, e se a transição falhar apaga as chaves;
   - `failed` → `fail`.
   Todos publicam `send_video_ws`. Arrancar em `projects/app.js`. Requisitos: COM-013, COM-014,
   COM-026, COM-029.
-- [ ] T026 `wsGateway/index.js`: ramo `type === "video-task"` (`contracts/ws-events.md`). Requisitos:
+- [X] T026 `wsGateway/index.js`: ramo `type === "video-task"` (`contracts/ws-events.md`). Requisitos:
   COM-013, COM-052.
 
 ### Rotas
 
-- [ ] T027 Criar `projects/routes/videos.js` com as rotas de `contracts/public-api.md` (exceto o
+- [X] T027 Criar `projects/routes/videos.js` com as rotas de `contracts/public-api.md` (exceto o
   upload, que fica no spec 001) e `GET /internal/video-tasks/:task` com `X-Internal-Token`. Usar
   `checkSharePermission` e `requireEditPermission` (`projects/middleware/shareAuth.js`) e
   `getCallerId` (`projects/utils/caller.js`). Montar em `projects/app.js` antes de `projectsRouter`.
   Requisitos: COM-001, COM-013, COM-016, COM-025, COM-031.
-- [ ] T028 Criar `apiGateway/routes/videos.js` com o *proxy* das rotas públicas. Segue o padrão de
+- [X] T028 Criar `apiGateway/routes/videos.js` com o *proxy* das rotas públicas. Segue o padrão de
   `apiGateway/routes/projects.js`: `auth.checkToken`, `X-Caller-Id`, `httpsAgent` e
   `forwardAxiosError`. Montar em `apiGateway/app.js` em `/projects` antes de `projectsRouter`.
   Requisitos: COM-001, COM-050.
 
 ### Worker base
 
-- [ ] T029 Criar `Tools/video_utils/` com:
+- [X] T029 Criar `Tools/video_utils/` com:
   - `messages.py`: construtores dos eventos de `contracts/worker-messages.md`;
   - `ffmpeg.py`: `probe(path)`, `run(args, on_progress, timeout_s, cancel_event)` com
     `-progress pipe:1` e progresso por `out_time_us / duração`, e
@@ -202,13 +202,13 @@ aceitação do Cap. 5 são testes.
     (pika com `prefetch=1`, consumo do *exchange* `video_cancel` numa *thread* e `ack` no `finally`);
   - `requirements.txt` com `pika==1.3.2` e `requests`.
   Requisitos: COM-013, COM-014, COM-027 a COM-029, COM-039 a COM-042, COM-052.
-- [ ] T030 [P] Criar `Tools/video_utils/tests/`:
+- [X] T030 [P] Criar `Tools/video_utils/tests/`:
   - `test_ffmpeg.py`: `verify` aceita a saída correta e rejeita uma duração +1 s, uma resolução
     errada e áudio em falta;
   - `test_worker.py`: mensagem `redelivered` → `failed worker_interrupted`; tarefa não `queued` →
     `ack` sem eventos; cancelamento termina o processo e apaga `/tmp/video/<id>`; *timeout* →
     `failed timeout`.
-- [ ] T031 Criar `Tools/video_noop/` com `video_noop.py`, que copia a entrada com
+- [X] T031 Criar `Tools/video_noop/` com `video_noop.py`, que copia a entrada com
   `ffmpeg -c copy`, emite progresso e aceita `params.sleepS` para testes de tempo, e um `Dockerfile`
   (`python:3.11-slim` + `ffmpeg` + `video_utils`). Registar `noop` em `VIDEO_TOOLS` só quando
   `NODE_ENV !== "production"` (`projects/video/tools/noop.js`). Requisito: COM-047.
@@ -224,14 +224,14 @@ aceitação do Cap. 5 são testes.
 
 **Independent Test**: Cenário 1 do [quickstart.md](./quickstart.md).
 
-- [ ] T032 [US1] Aplicar `validateProfile` com o perfil atual em `taskService.accept` (passo 4) e
+- [X] T032 [US1] Aplicar `validateProfile` com o perfil atual em `taskService.accept` (passo 4) e
   devolver `toResponse`. Requisitos: COM-004 a COM-008.
-- [ ] T033 [US1] Implementar e testar `GET /projects/:user/video-limits` nos `projects/routes/videos.js`
+- [X] T033 [US1] Implementar e testar `GET /projects/:user/video-limits` nos `projects/routes/videos.js`
   e no gateway (perfil, limites, operações restantes, tarefas ativas). Requisitos: COM-023, COM-018.
-- [ ] T034 [P] [US1] `frontend/lib/error-messages.ts`: mensagens dos códigos de vídeo. Em erros com
+- [X] T034 [P] [US1] `frontend/lib/error-messages.ts`: mensagens dos códigos de vídeo. Em erros com
   `upgrade: true`, abrir o `upgrade-dialog.tsx` existente com o limite Premium correspondente.
   Requisitos: COM-007, COM-024.
-- [ ] T035 [P] [US1] Criar `projects/tests/access.test.js`:
+- [X] T035 [P] [US1] Criar `projects/tests/access.test.js`:
   - anónimo → `401`;
   - convidado “ver” → `403`;
   - convidado “editar” Free num projeto Premium → limites e quota do convidado;
@@ -244,13 +244,13 @@ aceitação do Cap. 5 são testes.
 
 **Independent Test**: Cenário 2 do quickstart com `video_noop`.
 
-- [ ] T036 [P] [US2] Criar `frontend/lib/videos.ts`, `lib/queries/videos.ts` e `lib/mutations/videos.ts`
+- [X] T036 [P] [US2] Criar `frontend/lib/videos.ts`, `lib/queries/videos.ts` e `lib/mutations/videos.ts`
   (`useVideos`, `useVideo`, `useVideoUrl`, `useVideoTasks`, `useVideoLimits`, `useCreateVideoTask`,
   `useCancelVideoTask`, `useDeleteVideo`), no estilo de `lib/projects.ts` e `lib/queries/projects.ts`.
-- [ ] T037 [P] [US2] Criar `frontend/hooks/use-video-tasks.ts`: usar o *socket* de `useGetSocket`
+- [X] T037 [P] [US2] Criar `frontend/hooks/use-video-tasks.ts`: usar o *socket* de `useGetSocket`
   (`frontend/lib/queries/projects.ts:61`), subscrever `video-task-update`, atualizar a *cache* e, ao
   voltar a ligar, voltar a carregar as tarefas ativas (`contracts/ws-events.md`).
-- [ ] T038 [US2] Criar `frontend/components/project-page/video-task-panel.tsx` com:
+- [X] T038 [US2] Criar `frontend/components/project-page/video-task-panel.tsx` com:
   - a lista de tarefas do projeto;
   - o estado em PT (Em fila, A processar, Concluída, Falhada, Cancelada);
   - a barra de progresso (`@radix-ui/react-progress`);
@@ -258,9 +258,9 @@ aceitação do Cap. 5 são testes.
   - o botão Cancelar em tarefas ativas;
   - a ligação para o resultado.
   Requisitos: COM-013, COM-020, COM-031, COM-052.
-- [ ] T039 [US2] Integrar o painel de tarefas e a área de vídeos em `frontend/app/dashboard/[pid]/page.tsx`
+- [X] T039 [US2] Integrar o painel de tarefas e a área de vídeos em `frontend/app/dashboard/[pid]/page.tsx`
   com a mudança imagens/vídeos (`view-toggle.tsx`/`mode-toggle.tsx`), sem alterar a vista de imagens.
-- [ ] T040 [P] [US2] Criar `projects/tests/lifecycle.test.js`, de integração com RabbitMQ real
+- [X] T040 [P] [US2] Criar `projects/tests/lifecycle.test.js`, de integração com RabbitMQ real
   (`docker compose up rabbitmq projects_mongoDB`) e `video_noop`:
   - aceitação ≤ 2 s;
   - progresso a cada ≤ 5 s;
@@ -276,14 +276,14 @@ prioridade Premium.
 
 **Independent Test**: Cenário 3 do quickstart.
 
-- [ ] T041 [US3] Fazer chegar o saldo ao `operations-counter.tsx` existente nas vistas de vídeo e
+- [X] T041 [US3] Fazer chegar o saldo ao `operations-counter.tsx` existente nas vistas de vídeo e
   mostrar “N operações restantes” em `video-tool-menu.tsx` antes de cada confirmação (Free). Invalidar
   a *cache* do utilizador em cada `video-task-update` final. Requisito: COM-023.
-- [ ] T042 [US3] Criar `frontend/components/project-page/video-tool-menu.tsx`, o ponto de entrada das
+- [X] T042 [US3] Criar `frontend/components/project-page/video-tool-menu.tsx`, o ponto de entrada das
   ferramentas, que os specs 002 a 005 acrescentam. Fica desativado com o motivo (sem sessão, sem
   edição, formato, limite) a partir de `acceptedAsInput` e de `video-limits`. Requisitos: COM-001,
   COM-018, CONV-004.
-- [ ] T043 [P] [US3] Criar `projects/tests/priority.test.js` (integração): com o `video_noop` parado,
+- [X] T043 [P] [US3] Criar `projects/tests/priority.test.js` (integração): com o `video_noop` parado,
   publicar uma tarefa Free e depois uma Premium, arrancar o *worker* e verificar que a Premium é a
   primeira a passar a `processing`. Requisito: COM-019.
 
@@ -293,13 +293,13 @@ prioridade Premium.
 
 **Independent Test**: Cenário 4 do quickstart.
 
-- [ ] T044 [US4] `POST .../video-tasks/:task/cancel` → `taskService.cancel(..., "user_cancelled")`;
+- [X] T044 [US4] `POST .../video-tasks/:task/cancel` → `taskService.cancel(..., "user_cancelled")`;
   `409 TASK_FINAL` para tarefas já terminadas. Requisito: COM-016.
-- [ ] T045 [US4] Criar `projects/video/watchdog.js` (60 s): tarefas `processing` com
+- [X] T045 [US4] Criar `projects/video/watchdog.js` (60 s): tarefas `processing` com
   `deadlineAt < now` → `fail("timeout")` + `send_video_cancel`. Arrancar em `app.js`. Requisito: COM-040.
-- [ ] T046 [US4] `DELETE .../videos/:video` e remoção de projeto: cancelar as tarefas ativas com origem
+- [X] T046 [US4] `DELETE .../videos/:video` e remoção de projeto: cancelar as tarefas ativas com origem
   no vídeo ou no projeto (`source_video_removed`) antes de apagar. Requisito: COM-017.
-- [ ] T047 [P] [US4] Criar `projects/tests/failures.test.js`:
+- [X] T047 [P] [US4] Criar `projects/tests/failures.test.js`:
   - *timeout* com `video_noop` `sleepS` e `TIMEOUT.minMs` reduzido por variável de ambiente em teste;
   - reinício do *worker* a meio → `failed worker_interrupted` com devolução;
   - tarefas `queued` mantidas depois do reinício;
@@ -312,9 +312,9 @@ prioridade Premium.
 
 **Independent Test**: Cenário 5 do quickstart.
 
-- [ ] T048 [US5] Implementar `GET /projects/:user/video-notifications` e `POST .../ack` no `projects`
+- [X] T048 [US5] Implementar `GET /projects/:user/video-notifications` e `POST .../ack` no `projects`
   e no gateway (D14). Requisito: COM-015.
-- [ ] T049 [US5] Criar `frontend/components/video-notifications.tsx`. Montado no
+- [X] T049 [US5] Criar `frontend/components/video-notifications.tsx`. Montado no
   `app/dashboard/layout.tsx`, mostra um *toast* (`use-toast.ts`) por tarefa pendente ou recebida por
   *socket* e confirma com `ack`. Requisitos: COM-015, COM-052.
 
@@ -324,19 +324,19 @@ prioridade Premium.
 
 **Independent Test**: Cenário 6 do quickstart.
 
-- [ ] T050 [P] [US6] Criar `frontend/components/project-page/project-video-list.tsx` com os cartões de
+- [X] T050 [P] [US6] Criar `frontend/components/project-page/project-video-list.tsx` com os cartões de
   vídeo (nome, duração, resolução, tamanho, formato), a indicação de “resultado de <origem>” e o menu
   com Reproduzir, Descarregar, Ferramentas e Remover. Requisitos: COM-002, COM-031.
-- [ ] T051 [P] [US6] Criar `frontend/components/project-page/video-player.tsx`: `<video controls>` com
+- [X] T051 [P] [US6] Criar `frontend/components/project-page/video-player.tsx`: `<video controls>` com
   o URL de `useVideoUrl`, que renova o URL quando expira (evento `error` → novo pedido), e botão
   Descarregar (`download=1`). Requisitos: COM-030, COM-044, COM-050.
-- [ ] T052 [US6] Exportação do projeto no frontend:
+- [X] T052 [US6] Exportação do projeto no frontend:
   - em `downloadProjectImages` (`frontend/lib/projects.ts:388`, ZIP), acrescentar os vídeos do projeto
     na pasta `videos/`, descarregados pelo URL de descarga;
   - em `downloadProjectPdf` (`frontend/lib/projects.ts:582`), ignorar os vídeos e mostrar “Os vídeos
     não são incluídos no PDF” quando o projeto os tiver.
   Requisito: COM-033.
-- [ ] T053 [US6] `projects/routes/projects.js`:
+- [X] T053 [US6] `projects/routes/projects.js`:
   - em `DELETE /:user/:project` (linha ≈1751), apagar os `videoAsset` e os seus objetos e cancelar as
     tarefas;
   - em `deleteProjectAndResources` (linha ≈489, usada na eliminação da conta), apagar também os
@@ -345,7 +345,7 @@ prioridade Premium.
 - [ ] T054 [P] [US6] Criar `projects/tests/isolation.test.js`: num projeto com 2 imagens, 1 vídeo e
   `rotate`, o `POST /process` gera 2 resultados e o vídeo fica igual. Correr a regressão das
   ferramentas de imagem (quickstart, cenário 6). Requisitos: COM-032, COM-046.
-- [ ] T055 [P] [US6] Criar `projects/tests/deletion.test.js`:
+- [X] T055 [P] [US6] Criar `projects/tests/deletion.test.js`:
   - remover um vídeo → objeto apagado e URL dá `403`/`404`;
   - remover o projeto;
   - eliminar a conta → nenhum `videoAsset`, `videoTask` ou objeto.
@@ -355,22 +355,22 @@ prioridade Premium.
 
 **Independent Test**: Cenário 7 do quickstart.
 
-- [ ] T056 [US7] Criar `projects/video/janitor.js` (10 min) com as regras de limpeza de D11. Arrancar
+- [X] T056 [US7] Criar `projects/video/janitor.js` (10 min) com as regras de limpeza de D11. Arrancar
   em `app.js`. Requisito: COM-038.
-- [ ] T057 [US7] `docker-compose.yaml`: `deploy.replicas` e `deploy.resources.limits` (`cpus: "1"`,
+- [X] T057 [US7] `docker-compose.yaml`: `deploy.replicas` e `deploy.resources.limits` (`cpus: "1"`,
   `memory: 2g`) dos *workers* de vídeo, como em D10. Requisito: COM-037.
-- [ ] T058 [P] [US7] Criar o *script* `specs/000-video-common/load-test.sh` (`curl` em paralelo):
+- [X] T058 [P] [US7] Criar o *script* `specs/000-video-common/load-test.sh` (`curl` em paralelo):
   - 6 tarefas de 6 utilizadores, com 5 em `processing` e 1 em `queued`;
   - 101 tarefas `noop` que terminam todas.
   Requisito: COM-037.
-- [ ] T059 [P] [US7] Acrescentar ao `README.md` da raiz a secção “Vídeo” (FFmpeg nos contentores,
+- [X] T059 [P] [US7] Acrescentar ao `README.md` da raiz a secção “Vídeo” (FFmpeg nos contentores,
   variáveis, réplicas e como correr os testes e o quickstart). Requisito: COM-049.
 
 ## Phase 10: Polish
 
 - [ ] T060 Correr `/speckit-analyze` sobre 000 a 005 e corrigir incoerências.
-- [ ] T061 Medir `COM-036` (validação de 500 MB) e registar o resultado no relatório (Cap. 8/9).
-- [ ] T062 Verificar que nenhuma rota, evento ou fila de imagem mudou de contrato
+- [X] T061 Medir `COM-036` (validação de 500 MB) e registar o resultado no relatório (Cap. 8/9).
+- [X] T062 Verificar que nenhuma rota, evento ou fila de imagem mudou de contrato
   (`git diff` em `projects/routes/projects.js`, `wsGateway/index.js` e `Tools/utils`).
 
 ---
@@ -399,3 +399,36 @@ Pessoa E: T002, T006, T007, T026 (infraestrutura e wsGateway)
 2. A seguir, US1 a US3 (P1) e o spec 001 (submissão).
 3. Spec 002 (recorte) sobre a infraestrutura completa; depois US4 a US6, validadas com o recorte.
 4. Specs 003 a 005 em paralelo; US7 e Polish antes da entrega.
+
+## Notas de implementação (2026-10-20)
+
+- **T005**: os testes Node usam um MongoDB real (`TEST_MONGO_URL`, por exemplo `mongo:4.4` em Docker)
+  em vez de `mongodb-memory-server`, que descarrega binários grandes. O script é
+  `node --test --test-concurrency=1 "tests/**/*.test.js"`.
+- **T021**: a ligação ao RabbitMQ ficou em `projects/video/broker.js` (ligação persistente com canal de
+  confirmação e religação). O `utils/rabbit_mq.js` abre uma ligação por mensagem e lança exceções
+  quando o RabbitMQ está em baixo. Os eventos são tratados um de cada vez, pela ordem de chegada.
+- **T034**: em vez do `upgrade-dialog.tsx` (que pede dados de pagamento), os erros com `upgrade: true`
+  mostram um *toast* com o botão "Ver Premium" (`hooks/use-video-error-toast.tsx`).
+- **T040, T043, T047, T055**: cobertos por `checkpoint.sh` com os serviços reais (ciclo de vida,
+  progresso, resultado, saída inválida, prioridade, reinício do *worker*, remoção de projeto e de conta).
+  O *timeout* é testado em `projects/tests/taskService.test.js` (watchdog). Falta o caso do MP4
+  truncado em paralelo com um válido (T047).
+- **T042**: `video-limits` devolve `tools` (as ferramentas aceites pelo servidor); o menu só mostra
+  essas. O `noop` aparece se o `projects` não correr com `NODE_ENV=production`.
+- **T051**: o leitor ficou em `project-video-list.tsx` (`VideoPlayerDialog`), partilhado pela lista de
+  vídeos e pelo painel de tarefas.
+- **T053 / COM-035**: a eliminação da conta não apagava os projetos porque o `users` chamava
+  `https://projects:10002/projects/`. Corrigido para `https://projects:9001/` (`PROJECTS_URL`).
+- **Contratos**: os eventos `completed`/`failed` levam `ownerId`; o `TaskDTO` tem `projectId`;
+  `video-limits` tem `remainingOperations`, `activeTasks` e `tools`.
+- **T061 / COM-036** (2026-10-20): validação no servidor (`probe` + matriz + limites + `checkIntegrity`)
+  de um MP4 de 469 MB (1080p, 300 s, 13 Mb/s, H.264/AAC) na imagem do `projects`, 8 núcleos, com o
+  teste de carga a correr ao mesmo tempo: 825, 689 e 715 ms em 3 execuções (limite: 5 s).
+- **T058 / COM-037** (2026-10-20): `load-test.sh` com 5 réplicas do `video_noop_worker`: 6 utilizadores →
+  5 em processamento e 1 em fila; 101 tarefas Premium aceites e todas concluídas em 30 s, cada uma com
+  o seu resultado. O teste encontrou dois erros, já corrigidos: um índice antigo de `upload_id` na base
+  de dados (o `projects` faz agora `syncIndexes` no arranque) e um evento com erro que bloqueava os
+  seguintes (agora é descartado à segunda falha e o *watchdog* fecha a tarefa).
+- **Por fazer**: T054 (isolamento com a cadeia de imagem),
+  T060 (T061 medido, T062 verificado: só acréscimos nos ficheiros de imagem).

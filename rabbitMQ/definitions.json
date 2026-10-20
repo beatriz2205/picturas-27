@@ -165,6 +165,58 @@
             "durable": true,
             "auto_delete": false,
             "arguments": {}
+        },
+        {
+            "name": "video_noop_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
+            "name": "video_trim_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
+            "name": "video_convert_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
+            "name": "video_filter_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
+            "name": "video_detect_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
+            "name": "video_events_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
         }
     ],
     "exchanges": [
@@ -172,6 +224,15 @@
             "name": "picturas",
             "vhost": "/",
             "type": "direct",
+            "durable": true,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        },
+        {
+            "name": "video_cancel",
+            "vhost": "/",
+            "type": "fanout",
             "durable": true,
             "auto_delete": false,
             "internal": false,
@@ -329,6 +390,54 @@
             "destination": "ws_queue",
             "destination_type": "queue",
             "routing_key": "ws_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_noop_queue",
+            "destination_type": "queue",
+            "routing_key": "video_noop_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_trim_queue",
+            "destination_type": "queue",
+            "routing_key": "video_trim_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_convert_queue",
+            "destination_type": "queue",
+            "routing_key": "video_convert_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_filter_queue",
+            "destination_type": "queue",
+            "routing_key": "video_filter_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_detect_queue",
+            "destination_type": "queue",
+            "routing_key": "video_detect_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_events_queue",
+            "destination_type": "queue",
+            "routing_key": "video_events_queue",
             "arguments": {}
         }
     ]

@@ -22,6 +22,8 @@ async function uploadFile(ownerId, projectId, stage, filePath, contentType) {
     headers: form.getHeaders({ "Content-Length": form.getLengthSync() }),
     maxBodyLength: Infinity,
     maxContentLength: Infinity,
+    // Sem redirecionamentos: o follow-redirects guardaria o ficheiro todo em memória (D5)
+    maxRedirects: 0,
   });
   return resp.data.key;
 }

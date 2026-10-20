@@ -22,7 +22,9 @@ type ErrorContext =
   | "project-reorder"
   | "video-upload"
   | "video-load"
-  | "video-delete";
+  | "video-delete"
+  | "video-task"
+  | "video-cancel";
 
 
 type ErrorInfo = {
@@ -59,6 +61,11 @@ export function getErrorMessage(
         SERVICE_UNAVAILABLE: "Serviço indisponível",
         UPLOAD_ABORTED: "Envio interrompido",
         NOT_FOUND: "Não encontrado",
+        INVALID_PARAMS: "Parâmetros inválidos",
+        QUOTA_EXHAUSTED: "Limite diário atingido",
+        ACTIVE_TASK_LIMIT: "Demasiadas tarefas em curso",
+        DUPLICATE_TASK: "Pedido repetido",
+        TASK_FINAL: "A tarefa já terminou",
       };
       return { title: titles[data.code] ?? "Não foi possível concluir o pedido", description: data.message };
     }
@@ -222,6 +229,18 @@ export function getErrorMessage(
       return {
         title: "Erro ao remover o vídeo",
         description: backendMsg ?? "O vídeo não foi removido. Tenta novamente.",
+      };
+
+    case "video-task":
+      return {
+        title: "A tarefa não foi iniciada",
+        description: backendMsg ?? "Não foi possível iniciar o processamento do vídeo. Tenta novamente.",
+      };
+
+    case "video-cancel":
+      return {
+        title: "Erro ao cancelar",
+        description: backendMsg ?? "Não foi possível cancelar a tarefa. Tenta novamente.",
       };
 
     default:

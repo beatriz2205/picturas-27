@@ -3,6 +3,7 @@
 import DashboardSidebar from "@/components/dashboard-sidebar/dashboard-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
+import { VideoNotifications } from "@/components/video-notifications";
 
 export default function RootLayout({
   children,
@@ -14,6 +15,7 @@ export default function RootLayout({
     <SidebarProvider defaultOpen>
       <div className="flex min-h-screen w-screen">
         <DashboardSidebar />
+        <VideoNotifications />
         <main className="w-full h-screen max-w-full overflow-hidden relative">
           {path === "/dashboard" && (
             <SidebarTrigger

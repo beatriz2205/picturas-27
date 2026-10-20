@@ -25,8 +25,45 @@ export interface ProjectVideo {
 export interface VideoLimits {
   profile: "free" | "premium";
   limits: { maxBytes: number; maxDurationS: number; maxWidth: number; maxHeight: number; maxActiveTasks: number };
+  remainingOperations: number | null;
   dailyOperations: number | null;
+  activeTasks: number;
+  tools: string[];
 }
+
+export type VideoTaskStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
+
+// TaskDTO (specs/000-video-common/contracts/public-api.md)
+export interface VideoTask {
+  id: string;
+  tool: string;
+  projectId: string;
+  status: VideoTaskStatus;
+  progress: number;
+  sourceVideoId: string;
+  outputName: string | null;
+  params: Record<string, unknown>;
+  reason: { code: string; message: string } | null;
+  resultIds: string[];
+  startedBy: string;
+  queuedAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  // só nas notificações pendentes
+  ownerId?: string;
+}
+
+export const ACTIVE_STATUSES: VideoTaskStatus[] = ["queued", "processing"];
+export const isFinal = (s: VideoTaskStatus) => !ACTIVE_STATUSES.includes(s);
+
+// REQ-VID-COM-052: estados em português
+export const STATUS_LABELS: Record<VideoTaskStatus, string> = {
+  queued: "Em fila",
+  processing: "A processar",
+  completed: "Concluída",
+  failed: "Falhada",
+  cancelled: "Cancelada",
+};
 
 export interface VideoApiError {
   code: string;
@@ -43,7 +80,7 @@ export function videoApiError(error: unknown): VideoApiError | null {
   return null;
 }
 
-interface Access {
+export interface Access {
   uid: string;
   pid: string;
   token: string;
@@ -64,6 +101,12 @@ function projectPath({ uid, pid, ownerId, shareId }: Access) {
 }
 
 const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+// Rotas de tarefas: mesmo prefixo do projeto, com /video-tasks em vez de /videos
+function tasksPath(access: Access) {
+  const { base, query } = projectPath(access);
+  return { base: base.replace(/\/videos$/, "/video-tasks"), query };
+}
 
 export const fetchVideoLimits = async (uid: string, token: string) => {
   const r = await api.get<VideoLimits>(`/projects/${uid}/video-limits`, { headers: authHeader(token) });
@@ -88,6 +131,43 @@ export const fetchVideoUrl = async (access: Access & { videoId: string; download
 export const deleteVideo = async (access: Access & { videoId: string }) => {
   const { base, query } = projectPath(access);
   await api.delete(`${base}/${access.videoId}${query}`, { headers: authHeader(access.token) });
+};
+
+// ---- tarefas (UC-VID-002 a 005 usam estas chamadas com a sua ferramenta)
+
+export interface CreateTaskBody {
+  tool: string;
+  videoId: string;
+  outputName?: string;
+  params?: Record<string, unknown>;
+}
+
+export const createVideoTask = async (access: Access & { body: CreateTaskBody }) => {
+  const { base, query } = tasksPath(access);
+  const r = await api.post<VideoTask>(`${base}${query}`, access.body, { headers: authHeader(access.token) });
+  return r.data;
+};
+
+export const fetchVideoTasks = async (access: Access & { status?: "active" | "final" | "all" }) => {
+  const { base, query } = tasksPath(access);
+  const status = access.status ? `${query ? "&" : "?"}status=${access.status}` : "";
+  const r = await api.get<VideoTask[]>(`${base}${query}${status}`, { headers: authHeader(access.token) });
+  return r.data;
+};
+
+export const cancelVideoTask = async (access: Access & { taskId: string }) => {
+  const { base, query } = tasksPath(access);
+  const r = await api.post<VideoTask>(`${base}/${access.taskId}/cancel${query}`, {}, { headers: authHeader(access.token) });
+  return r.data;
+};
+
+export const fetchVideoNotifications = async (uid: string, token: string) => {
+  const r = await api.get<VideoTask[]>(`/projects/${uid}/video-notifications`, { headers: authHeader(token) });
+  return r.data;
+};
+
+export const ackVideoNotifications = async (uid: string, token: string, taskIds: string[]) => {
+  await api.post(`/projects/${uid}/video-notifications/ack`, { taskIds }, { headers: authHeader(token) });
 };
 
 export interface UploadOptions {

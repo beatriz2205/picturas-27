@@ -48,12 +48,17 @@ Fila durável, sem prioridade, consumida pelo `projects` com `ack` manual.
   "metrics": { "processingMs": 1200 } }
 ```
 
+Os eventos `completed` e `failed` incluem também `"ownerId"` (o da mensagem de pedido). Se a tarefa
+já tiver sido apagada (eliminação da conta, `COM-035`), o `projects` usa-o para apagar os objetos
+carregados.
+
 Um `failed` pode incluir `"orphanKeys": ["…"]` com objetos que o *worker* já tinha carregado (por
 exemplo, o JSON de deteção quando o vídeo anotado falha). O `projects` apaga-os (`COM-029`,
 `DET-006`).
 
 Códigos de falha (`reason.code`): `ffmpeg_error`, `corrupted_input`, `output_verification_failed`,
-`timeout`, `worker_interrupted`, `storage_error`, `tool_error`. A mensagem para o utilizador é escolhida
+`timeout`, `worker_interrupted`, `storage_error`, `tool_error`. O `projects` usa ainda `queue_timeout`
+(tarefa em fila há mais de 24 h, aplicado pelo *watchdog*), que os *workers* não enviam. A mensagem para o utilizador é escolhida
 pelo `projects` a partir do código (`projects/video/messages.js`), não pelo texto do *worker*.
 
 ## Regras do *worker* (`Tools/video_utils/worker.py`)

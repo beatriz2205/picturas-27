@@ -140,6 +140,8 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: user
       RABBITMQ_PASS: password
+      # Partilhado só com os workers de vídeo (GET /internal/video-tasks/:id)
+      VIDEO_INTERNAL_TOKEN: ${VIDEO_INTERNAL_TOKEN:-dev-video-token}
     networks:
       - elk
     volumes:
@@ -469,6 +471,35 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
+  # Worker de teste do vídeo (spec 000, REQ-VID-COM-047): copia a entrada sem a alterar.
+  # Os workers das ferramentas (specs 002 a 005) seguem este modelo, com deploy.replicas (D10).
+  video_noop_worker:
+    build:
+      context: ./Tools
+      dockerfile: video_noop/Dockerfile
+    restart: on-failure
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      IMG_STORAGE_URL: http://img_storage:11000
+      PROJECTS_URL: https://projects:9001
+      VIDEO_INTERNAL_TOKEN: ${VIDEO_INTERNAL_TOKEN:-dev-video-token}
+    networks:
+      - elk
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - video_tmp:/tmp/video
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+
   ws_gateway:
     build: ./wsGateway
     restart: on-failure
@@ -539,3 +570,4 @@ volumes:
   image_data:
   seaweedfs_data:
   subscription_data:
+  video_tmp:

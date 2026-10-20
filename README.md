@@ -19,6 +19,7 @@ PictuRAS is a web-based image editing platform that combines traditional image p
 - [Configuration](#-configuration)
 - [Project Structure](#-project-structure)
 - [Development Workflow](#-development-workflow)
+- [Video](#-video)
 - [Troubleshooting](#-troubleshooting)
 - [Authors](#-authors)
 - [License](#-license)
@@ -441,6 +442,62 @@ Queues and message rates: <http://localhost:15672> (`user` / `password`).
 
 ---
 
+## 🎬 Video
+
+Projects can hold videos next to images. Specifications, contracts and design decisions live in
+[`specs/`](specs/README.md): `000-video-common` (shared infrastructure) and one folder per use
+case (`001-video-submit` … `005-video-detection`).
+
+### How it fits together
+
+- **`projects`** owns the video state: `videoAsset` (originals and results) and `videoTask`
+  (one processing request). It validates every file with `ffprobe` (FFmpeg is installed in its
+  image), enforces the per-plan limits in `projects/config/video.js`, reserves the daily
+  operation in `users` and publishes the task to `video_<tool>_queue` (with priority 10 for
+  Premium, 1 for Free).
+- **Video workers** (`Tools/video_<tool>/`) are Python services built on `Tools/video_utils/`.
+  They download the input, run FFmpeg, verify the output, upload it to `video_out` and report
+  `started` / `progress` / `completed` / `failed` on `video_events_queue`. Cancellations arrive
+  on the `video_cancel` fanout exchange.
+- **`wsGateway`** forwards `video-task-update` events to the user and to the project room.
+- **Frontend**: video list, task panel and tool menu in the project page
+  (`components/project-page/video-*.tsx`); notifications for finished tasks in the dashboard
+  layout. New tools are registered in `frontend/lib/video-tools.tsx` and
+  `projects/config/video.js` (`VIDEO_TOOLS`).
+
+`video_noop_worker` is a test worker that copies the input. The `noop` tool is only offered
+when `projects` does not run with `NODE_ENV=production`.
+
+### Configuration
+
+| Variable               | Default           | Service(s)               | Purpose                                         |
+| ---------------------- | ----------------- | ------------------------ | ----------------------------------------------- |
+| `VIDEO_INTERNAL_TOKEN` | `dev-video-token` | projects, video workers  | Protects `GET /internal/video-tasks/:id`        |
+| `VIDEO_TIMEOUT_MIN_MS` | 15 min            | projects                 | Minimum processing time limit (tests lower it)  |
+| `VIDEO_WATCHDOG_MS`    | 60 s              | projects                 | How often overdue tasks are failed              |
+| `VIDEO_QUEUE_MAX_MS`   | 24 h              | projects                 | Queued tasks older than this are failed         |
+| `VIDEO_JANITOR_MS`     | 10 min            | projects                 | How often temporary files and refunds are swept |
+
+Video workers declare `deploy.replicas` and `deploy.resources.limits` (1 CPU, 2 GB) in
+`docker-compose.yaml`; raise `replicas` to process more tasks at the same time.
+
+### Tests
+
+```bash
+# Unit tests (need a MongoDB; any mongo:4.4 container works)
+docker run -d --name test-mongo -p 27099:27017 mongo:4.4
+bash projects/tests/fixtures/make-videos.sh            # test videos (git-ignored)
+cd projects && TEST_MONGO_URL=mongodb://localhost:27099/test npm test
+cd users    && TEST_MONGO_URL=mongodb://localhost:27099/test npm test
+pip install -r Tools/video_utils/requirements-dev.txt && (cd Tools && pytest video_utils/tests)
+
+# Against the running stack
+bash specs/000-video-common/checkpoint.sh   # task lifecycle, quota, cancel, priority, restart
+bash specs/001-video-submit/e2e.sh          # video upload through Nginx
+```
+
+---
+
 ## 🩹 Troubleshooting
 
 **The page does not load / `ERR_CONNECTION_REFUSED`**
@@ -485,6 +542,11 @@ docker compose down -v
 docker compose build --no-cache
 docker compose up
 ```
+
+**Video upload returns 503 / SeaweedFS logs `Not enough data nodes found`**
+SeaweedFS creates several 1 GB volumes per bucket and stops when the disk cannot hold more. Free
+disk space, or for local development lower the volume size in the `seaweedfs` command
+(`-master.volumeSizeLimitMB=256`) and recreate the container.
 
 **Out of disk space**
 `docker system prune -a --volumes` reclaims unused images and volumes — it also **deletes your
