@@ -112,7 +112,7 @@ test.beforeEach(async () => {
 });
 
 async function newProject(owner = FREE, extra = {}) {
-  return Project.create({ name: "p", user_id: owner, imgs: [], tools: [], ...extra });
+  return Project.create({ name: "p", user_id: owner, mediaType: "videos", imgs: [], tools: [], ...extra });
 }
 
 // Envio multipart em stream, como o gateway faz (fetch não envia ficheiros grandes sem buffering)
@@ -179,6 +179,7 @@ test("US1: submeter um vídeo válido cria a entrada e guarda o ficheiro (SUBMIT
   assert.strictEqual(r.body.width, 1280);
   assert.strictEqual(r.body.audioCodec, "aac");
   assert.strictEqual(r.body.acceptedAsInput, true);
+  assert.strictEqual((await Project.getOne(FREE, p._id)).mediaType, "videos");
   const asset = await VideoAsset.findById(r.body.id);
   assert.strictEqual(asset.sha256, sha("ok_720p_30s.mp4"));
   assert.ok(fs.existsSync(path.join(STORE, FREE, asset.storage_key)));
@@ -193,6 +194,26 @@ test("US1: um segundo vídeo é uma nova entrada; nome repetido recebe sufixo (S
   assert.strictEqual(r.body.name, "noaudio (1).mp4");
   assert.strictEqual(r.body.audioCodec, null);
   assert.strictEqual(await VideoAsset.countDocuments({ project_id: p._id }), 2);
+});
+
+test("US1: não permite vídeos num projeto de imagens", { skip }, async () => {
+  const typedProject = await newProject(FREE, { mediaType: "images" });
+  const typedResult = await upload(`/${FREE}/${typedProject._id}/videos`, {
+    file: "noaudio.mp4",
+    caller: FREE,
+  });
+  assert.strictEqual(typedResult.status, 409, JSON.stringify(typedResult.body));
+
+  const legacyProject = await newProject(FREE, {
+    mediaType: undefined,
+    imgs: [{ og_uri: "src/a.jpg", new_uri: "out/a.jpg", og_img_key: "a", og_sha256: "hash" }],
+  });
+  const legacyResult = await upload(`/${FREE}/${legacyProject._id}/videos`, {
+    file: "noaudio.mp4",
+    caller: FREE,
+  });
+  assert.strictEqual(legacyResult.status, 409, JSON.stringify(legacyResult.body));
+  assert.strictEqual(await VideoAsset.countDocuments(), 0);
 });
 
 test("US1: a submissão não toca na quota de operações (SUBMIT-010)", { skip }, async () => {
@@ -293,6 +314,7 @@ test("US4: criar projeto a partir de um vídeo; vídeo recusado não cria projet
   const ok = await upload(`/${FREE}/video-project`, { file: "noaudio.mp4", caller: FREE, fields: { name: "Novo" } });
   assert.strictEqual(ok.status, 201, JSON.stringify(ok.body));
   assert.strictEqual(ok.body.project.name, "Novo");
+  assert.strictEqual(ok.body.project.mediaType, "videos");
   assert.strictEqual(ok.body.video.name, "noaudio.mp4");
   assert.strictEqual(await mongoose.connection.db.collection("projects").countDocuments(), before + 1);
 });

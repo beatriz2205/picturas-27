@@ -178,7 +178,14 @@ router.post("/:user/video-project", async (req, res) => {
     storedKey = await storeOriginal(req.params.user, String(projectId), file.path);
 
     // Mesmos valores por omissão de POST /:user (routes/projects.js)
-    const project = await Project.create({ _id: projectId, name, user_id: req.params.user, imgs: [], tools: [] });
+    const project = await Project.create({
+      _id: projectId,
+      name,
+      user_id: req.params.user,
+      mediaType: "videos",
+      imgs: [],
+      tools: [],
+    });
 
     const asset = await VideoAsset.create({
       ...assetFields(meta, file),
@@ -227,7 +234,10 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
 
   try {
     const { callerId, profile } = await callerProfile(req);
-    await loadProjectOr404(ownerId, projectId);
+    const project = await loadProjectOr404(ownerId, projectId);
+    if (project.mediaType === "images" || project.imgs.length > 0) {
+      throw new VideoError("PROJECT_MEDIA_TYPE_MISMATCH", 409, "Não é possível adicionar vídeos a um projeto de imagens.");
+    }
 
     const uploadId = req.headers["x-upload-id"];
     if (!UUID_RE.test(uploadId || "")) {
@@ -249,6 +259,11 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
     const { maxBytes } = limitsFor(profile);
     file = await receiveUpload(req, res, { maxBytes, sizeError: () => sizeError(null, profile) });
     const meta = await validateReceived(file, profile);
+
+    const videoProject = await Project.claimMediaType(ownerId, projectId, "videos");
+    if (!videoProject) {
+      throw new VideoError("PROJECT_MEDIA_TYPE_MISMATCH", 409, "Não é possível adicionar vídeos a um projeto de imagens.");
+    }
 
     storedKey = await storeOriginal(ownerId, projectId, file.path);
 

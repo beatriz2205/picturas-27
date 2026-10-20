@@ -17,6 +17,7 @@ const imgSchema = new mongoose.Schema({
 const projectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+  mediaType: { type: String, enum: ["images", "videos"] },
   imgs: { type: [imgSchema], default: [] },
   tools: { type: [toolSchema], default: [] },
   version: { type: Number, default: 0 },

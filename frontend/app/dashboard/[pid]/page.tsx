@@ -47,6 +47,7 @@ import { useUpdateSession } from "@/lib/mutations/session";
 import { getErrorMessage } from "@/lib/error-messages";
 import { PresetsDialog } from "@/components/presets/presets-dialog";
 import { AiAssistantDialog } from "@/components/assistant/ai-assistant-dialog";
+import { useProjectVideos } from "@/lib/queries/videos";
 
 export default function Project({
   params,
@@ -66,6 +67,14 @@ export default function Project({
   const ownerId = searchParams.get("owner") ?? session.user._id;
   const shareId = searchParams.get("share") ?? undefined;
   const project = useGetProject(session.user._id, pid, session.token, ownerId, shareId);
+  const projectVideos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
+  const isVideoProject =
+    project.data?.mediaType === "videos" ||
+    (!project.data?.mediaType &&
+      ((project.data?.imgs.length ?? 0) === 0 &&
+        (projectVideos.isLoading ||
+          projectVideos.isError ||
+          (projectVideos.data?.length ?? 0) > 0)));
   const downloadProjectImages = useDownloadProject();
   const processProject = useProcessProject(
     session.user._id,
@@ -617,15 +626,17 @@ const handleCancel = () => {
             <h1 className="text-lg font-semibold truncate">
               {project.data.name}
             </h1>
-            <div className="flex items-center gap-2 xl:hidden">
-              <ViewToggle />
-              <ModeToggle />
-            </div>
+            {!isVideoProject && (
+              <div className="flex items-center gap-2 xl:hidden">
+                <ViewToggle />
+                <ModeToggle />
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between w-full xl:w-auto gap-2">
             <SidebarTrigger variant="outline" className="h-9 w-10 lg:hidden" />
                       <div className="flex items-center gap-2 flex-wrap justify-end xl:justify-normal w-full xl:w-auto">
-              {mode !== "results" && (
+              {mode !== "results" && !isVideoProject && (
                 <>
                   <Button
                     disabled={
@@ -701,7 +712,7 @@ const handleCancel = () => {
                     <Play /> Apply
                   </Button>
 
-          {canEdit && (
+          {canEdit && !isVideoProject && (
             <>
                   <AiAssistantDialog
                     uid={session.user._id}
@@ -716,22 +727,26 @@ const handleCancel = () => {
 
                   <PresetsDialog />
                   <AddImagesDialog />
-                  {/* Vídeo só para contas registadas (RNG-01) */}
-                  {session.user.type !== "anonymous" && (
-                    <AddVideoDialog pid={pid} ownerId={ownerId} shareId={shareId} />
-                  )}
           </>
           )}
-                {/* botão Share só para o owner */}
-                {session.user._id === ownerId && (
-                  <ShareProjectDialog 
-                  projectId={project.data._id} 
-                  projectVersion={project.data.version}
-                />
-                )}
                 </>
               )}
 
+              {mode !== "results" && session.user._id === ownerId && (
+                <ShareProjectDialog
+                  projectId={project.data._id}
+                  projectVersion={project.data.version}
+                />
+              )}
+
+              {mode !== "results" &&
+                canEdit &&
+                isVideoProject &&
+                session.user.type !== "anonymous" && (
+                  <AddVideoDialog pid={pid} ownerId={ownerId} shareId={shareId} />
+                )}
+
+              {!isVideoProject && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -822,25 +837,31 @@ const handleCancel = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+              )}
 
-              <div className="hidden xl:flex items-center gap-2">
-                <ViewToggle />
-                <ModeToggle />
-              </div>
+              {!isVideoProject && (
+                <div className="hidden xl:flex items-center gap-2">
+                  <ViewToggle />
+                  <ModeToggle />
+                </div>
+              )}
             </div>
           </div>
         </div>
-        {/* Vídeos do projeto (UC-VID-001) */}
-        <ProjectVideoList pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
-
         {/* Main Content */}
 
         <div className="h-full overflow-x-hidden flex">
-        <Toolbar />
-        <ProjectImageList
-          setCurrentImageId={setCurrentImage}
-          results={projectResults.data}
-        />
+          {isVideoProject ? (
+            <ProjectVideoList pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
+          ) : (
+            <>
+              <Toolbar />
+              <ProjectImageList
+                setCurrentImageId={setCurrentImage}
+                results={projectResults.data}
+              />
+            </>
+          )}
       </div>
       </div>
       <Transition

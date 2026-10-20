@@ -19,6 +19,13 @@ modelo `videoAsset` e armazenamento.
   só podem ser verificados pelo conteúdo, depois de o ficheiro chegar ao servidor.
 - A repetição de uma submissão cuja confirmação se perdeu reutiliza o mesmo identificador de envio e
   não cria uma segunda entrada. Uma nova seleção do mesmo ficheiro é uma nova submissão (RN6).
+- Um projeto tem um único tipo de conteúdo (imagens ou vídeos) desde a criação e nunca aceita
+  conteúdo do outro tipo.
+- É possível selecionar vários vídeos por submissão. São enviados individualmente e em sequência,
+  mantendo um identificador de envio próprio para cada vídeo.
+- Os vídeos aparecem na área principal do projeto, em grelha; projetos de vídeo não apresentam
+  ferramentas de edição de imagem, e projetos de imagem não apresentam ações de submissão de vídeo.
+- Nomes de ficheiro longos são truncados visualmente sem ultrapassar o cartão.
 
 ## User Scenarios & Testing
 
@@ -43,7 +50,11 @@ e 720p e verificar a entrada no projeto, os metadados e o objeto no armazenament
    entrada para o vídeo e não foi apresentada confirmação (SUBMIT-006).
 4. **Given** um projeto com um vídeo, **When** o utilizador submete outro vídeo válido, **Then** o
    projeto tem os dois (SUBMIT-007).
-5. **Given** um utilizador Free sem operações restantes, **When** submete um vídeo válido, **Then** a
+5. **Given** um utilizador seleciona vários vídeos, **When** confirma a submissão, **Then** cada vídeo
+   válido é adicionado ao projeto como uma entrada separada.
+6. **Given** um projeto de imagens, **When** o utilizador tenta submeter um vídeo, **Then** a operação
+   é recusada e as imagens existentes não mudam.
+7. **Given** um utilizador Free sem operações restantes, **When** submete um vídeo válido, **Then** a
    submissão é aceite e o contador não muda (SUBMIT-010).
 
 ---
@@ -139,6 +150,13 @@ lista de projetos.
 - **SUBMIT-008**: Permitir repetir a submissão após uma falha.
 - **SUBMIT-009**: Repetir uma submissão já confirmada mantém uma só entrada.
 - **SUBMIT-010**: A submissão não altera o saldo de operações.
+- **SUBMIT-011**: Um projeto só pode conter imagens ou vídeos; recusar submissões que misturem os
+  dois tipos, incluindo pedidos diretos à API.
+- **SUBMIT-012**: Permitir selecionar e submeter vários vídeos numa única ação, enviando cada ficheiro
+  individualmente com o seu próprio identificador de envio.
+- **SUBMIT-013**: Apresentar os vídeos na área principal do projeto em grelha; ocultar as ferramentas
+  de edição de imagem em projetos de vídeo e as ações de submissão de vídeo em projetos de imagem.
+- **SUBMIT-014**: Truncar visualmente nomes de vídeo longos para que permaneçam dentro do cartão.
 
 Requisitos comuns usados (implementados no 000): COM-001 a COM-007, COM-029, COM-034, COM-036 (≤ 5 s
 para validar 500 MB), COM-038 (envios falhados ≤ 24 h), COM-045, COM-050.

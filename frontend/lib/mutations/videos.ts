@@ -4,11 +4,11 @@ import { videosKey } from "../queries/videos";
 
 type Params<F extends (...args: never[]) => unknown> = Parameters<F>[0];
 
-export const useUploadVideo = (pid: string) => {
+export const useUploadVideo = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (p: Params<typeof uploadVideo>) => uploadVideo(p),
-    onSuccess: () => qc.invalidateQueries({ queryKey: videosKey(pid), refetchType: "all" }),
+    onSuccess: (_data, p) => qc.invalidateQueries({ queryKey: videosKey(p.pid), refetchType: "all" }),
   });
 };
 

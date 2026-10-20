@@ -89,3 +89,14 @@ module.exports.updateRaw = async (user_id, project_id, update) => {
   ).exec();
 };
 
+module.exports.claimMediaType = async (user_id, project_id, mediaType) => {
+  return await ProjectModel.findOneAndUpdate(
+    {
+      user_id,
+      _id: project_id,
+      $or: [{ mediaType }, { mediaType: { $exists: false } }],
+    },
+    { $set: { mediaType } },
+    { new: true }
+  ).exec();
+};
