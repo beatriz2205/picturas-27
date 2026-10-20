@@ -46,5 +46,18 @@ module.exports = {
   //   outputs    tipos de resultado ("video", "detections")
   //   dedup      true para recusar pedidos idênticos ativos (DUPLICATE_TASK, TRIM-008)
   // O "noop" (worker de teste, REQ-VID-COM-047) só existe fora de produção.
-  VIDEO_TOOLS: process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") },
+  VIDEO_TOOLS: {
+    ...(process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") }),
+    filter: require("../video/tools/filter"),
+  },
+
+  // REQ-VID-FLT-001/002 (spec 004, research F3): estilos predefinidos dos filtros. Fonte única: o
+  // frontend recebe-os por GET .../filter-options e o worker só conhece as matrizes de "tint".
+  // Valores na escala −100..+100 (0 neutro); só o saturation −100 do P&B é exigido (FLT-002).
+  FILTER_STYLES: [
+    { id: "bw", label: "Preto e Branco", brightness: 0, contrast: 10, saturation: -100, tint: null },
+    { id: "sepia", label: "Sépia", brightness: 5, contrast: 0, saturation: -100, tint: "sepia" },
+    { id: "vintage", label: "Vintage", brightness: 5, contrast: -15, saturation: -35, tint: "sepia30" },
+  ],
+  FILTER_RANGE: { min: -100, max: 100, neutral: 0 },
 };

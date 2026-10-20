@@ -128,6 +128,29 @@ export const fetchVideoUrl = async (access: Access & { videoId: string; download
   return r.data;
 };
 
+// Estilos e intervalo dos filtros (specs/004-video-filters/contracts/filter-api.md)
+export interface FilterStyle {
+  id: string;
+  label: string;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  tint: string | null;
+}
+
+export interface FilterOptions {
+  styles: FilterStyle[];
+  range: { min: number; max: number; neutral: number };
+}
+
+export const fetchFilterOptions = async (access: Access & { videoId: string }) => {
+  const { base, query } = projectPath(access);
+  const r = await api.get<FilterOptions>(`${base}/${access.videoId}/filter-options${query}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
+
 export const deleteVideo = async (access: Access & { videoId: string }) => {
   const { base, query } = projectPath(access);
   await api.delete(`${base}/${access.videoId}${query}`, { headers: authHeader(access.token) });

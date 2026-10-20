@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchProjectVideos, fetchVideoLimits, fetchVideoTasks } from "../videos";
+import { Access, fetchFilterOptions, fetchProjectVideos, fetchVideoLimits, fetchVideoTasks, fetchVideoUrl } from "../videos";
 
 export const videosKey = (pid: string) => ["videos", pid];
 
@@ -26,4 +26,22 @@ export const useVideoTasks = (uid: string, pid: string, token: string, ownerId?:
     queryKey: videoTasksKey(pid),
     queryFn: () => fetchVideoTasks({ uid, pid, token, ownerId, shareId, status: "all" }),
     enabled: !!token && !!pid,
+  });
+
+// Estilos dos filtros (spec 004): configuração do servidor, não muda durante a sessão
+export const useFilterOptions = (access: Access, videoId: string) =>
+  useQuery({
+    queryKey: ["filter-options", access.pid, videoId],
+    queryFn: () => fetchFilterOptions({ ...access, videoId }),
+    enabled: !!access.token && !!videoId,
+    staleTime: Infinity,
+  });
+
+// URL temporário para reproduzir (REQ-VID-COM-050: válido 15 min; renovado antes de expirar)
+export const useVideoUrl = (access: Access, videoId: string) =>
+  useQuery({
+    queryKey: ["video-url", access.pid, videoId, access.token],
+    queryFn: () => fetchVideoUrl({ ...access, videoId }),
+    enabled: !!access.token && !!videoId,
+    staleTime: 10 * 60e3,
   });

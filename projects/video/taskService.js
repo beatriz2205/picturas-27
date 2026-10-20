@@ -143,7 +143,7 @@ async function accept({ callerId, profile, ownerId, projectId, body = {} }) {
   const outputName = cleanOutputName(body.outputName);
 
   // 6. pedido idêntico ativo (TRIM-008)
-  const dedupKey = tool.dedup ? dedupKeyFor(callerId, video._id, body.tool, params) : null;
+  const dedupKey = tool.dedup ? dedupKeyFor(callerId, video._id, body.tool, tool.dedupParams ? tool.dedupParams(params) : params) : null;
   if (dedupKey) {
     const dup = await VideoTask.findOne({ dedupKey, status: { $in: ACTIVE } });
     if (dup) {

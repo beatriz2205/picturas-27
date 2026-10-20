@@ -42,6 +42,43 @@ porque não cumpre FLT-007. Enviar os fotogramas às ferramentas de imagem pela 
 no segundo processo. É uma estimativa a confirmar na medição (T013). Para acelerar: saltar os ajustes
 com valor 0 (fator 1) e usar *threads* para ler, processar e escrever em paralelo.
 
+**Ajustes na implementação (T008, T014)**:
+- Sem `-shortest` no codificador: o AAC da origem acaba uns milissegundos antes do vídeo e o
+  `-shortest` cortava o último fotograma (1799 em vez de 1800). O áudio vem da própria origem, por
+  isso a opção não é precisa.
+- Primeira medição com `ImageEnhance` (1 vCPU, 60 s 1080p): 420 s, muito acima de FLT-008. Partes:
+  descodificação para rgb24 ≈ 51 s, `libx264 veryfast` ≈ 112 s, `ImageEnhance` ≈ 116 ms por
+  fotograma (≈ 210 s) e `ffprobe -count_frames` ≈ 40 s.
+- `adjust.py` reproduz as fórmulas de `ImageEnhance` em vez de as chamar. `ImageEnhance` faz
+  `Image.blend(degenerada, imagem, f)`, isto é `trunc(d + f·(v − d))` cortado a 0..255:
+  - Brightness (`d = 0`) e Contrast (`d` = média de L) são iguais em cada canal: aplicam-se com
+    uma tabela (`Image.point`) calculada em `float32`, como o `Blend.c`. O resultado é igual bit a
+    bit ao de `ImageEnhance` (teste `test_mesmas_formulas_que_imageenhance`).
+  - Color (`d` = L da própria imagem) é linear nos canais: aplica-se com uma matriz
+    (`Image.convert`), composta com a da tonalidade quando a saturação é ≤ 1 (sem cortes entre as
+    duas). Difere de `ImageEnhance` no arredondamento (≤ 2 níveis).
+  - Cerca de 30 ms por fotograma em vez de 116 ms (medido fora do pipeline). O PSNR contra `ImageEnhance` (T009) ficou entre
+    36,2 e 38,3 dB com `testsrc2`, o pior caso por ter arestas de cor nítidas.
+- Medições do *handler* completo (60 s 1080p 30 fps `testsrc2`, brilho +50, contraste +20,
+  saturação −30; Docker Desktop num portátil, `--cpus` no contentor):
+
+  | CPU | preset | threads | tempo | tamanho |
+  |---|---|---|---|---|
+  | 1 | veryfast | auto | 330 s | 56 MB |
+  | 1 | superfast | auto | 311 s | 91 MB |
+  | 1 | ultrafast | 1 | 274 s | 125 MB |
+  | 1 | veryfast | 1 | 314 s | 54 MB |
+  | 2 | veryfast | auto | 181 s | 56 MB |
+
+  O limite está no FFmpeg e não no Python: só a cadeia FFmpeg → rgb24 → FFmpeg (sem ajustes) leva
+  42 a 54 s por cada 20 s de vídeo com 1 vCPU, contra 19 s para uma transcodificação direta em YUV.
+  As conversões YUV↔RGB e a contenção entre os dois processos com quota de CPU custam mais do que
+  os ajustes. **Com 1 vCPU, FLT-008 não é cumprido**; com 2 vCPU fica no limite (≈ 180 s). Decisão
+  pendente (T014): dar 2 vCPU ao `video_filter_worker` ou rever FLT-008 no relatório (Cap. 8). O
+  preset e as threads são configuráveis (`VIDEO_FILTER_PRESET`, `VIDEO_FILTER_THREADS`).
+- A contagem de fotogramas usa `nb_frames` do MP4 (a tabela de amostras, exata e instantânea) em
+  vez de `-count_frames`; os testes confirmam que os dois valores coincidem.
+
 ## F2. Conversão da escala (A18)
 
 `fator = 1 + valor/100`: −100 → 0, 0 → 1, +100 → 2, que é o intervalo do `brightness-tool.tsx`

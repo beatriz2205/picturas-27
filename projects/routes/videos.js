@@ -325,6 +325,17 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
   }
 });
 
+// Estilos e intervalo dos filtros (spec 004, contracts/filter-api.md; REQ-VID-FLT-001)
+router.get("/:user/:project/videos/:video/filter-options", checkSharePermission, async (req, res) => {
+  try {
+    await loadProjectOr404(req.params.user, req.params.project);
+    await loadVideoOr404(req.params.project, req.params.video);
+    res.status(200).json(VIDEO_TOOLS.filter.options());
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
 router.get("/:user/:project/videos/:video", checkSharePermission, async (req, res) => {
   try {
     await loadProjectOr404(req.params.user, req.params.project);

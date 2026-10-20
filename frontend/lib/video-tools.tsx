@@ -2,8 +2,10 @@
 // Cada spec de ferramenta (002 a 005) acrescenta aqui a sua entrada, com o mesmo id do
 // VIDEO_TOOLS de projects/config/video.js.
 import type { ComponentType } from "react";
-import { FlaskConical, type LucideIcon } from "lucide-react";
-import type { ProjectVideo, VideoLimits } from "./videos";
+import { FlaskConical, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { FilterPanel } from "@/components/video-tools/filter-panel";
+import { FilterParams, NEUTRAL_FILTER, validateFilter } from "./video-filters";
+import type { Access, ProjectVideo, VideoLimits } from "./videos";
 
 export type VideoToolParams = Record<string, unknown>;
 
@@ -12,6 +14,8 @@ export interface VideoToolFormProps {
   limits: VideoLimits;
   params: VideoToolParams;
   onChange: (params: VideoToolParams) => void;
+  // para os pedidos da própria ferramenta (opções, URL de pré-visualização)
+  access: Access;
 }
 
 export interface VideoToolDef {
@@ -27,6 +31,8 @@ export interface VideoToolDef {
   validate?: (params: VideoToolParams, video: ProjectVideo) => string | null;
   // Nome sugerido para o resultado
   outputName?: (video: ProjectVideo) => string;
+  // Diálogo mais largo (ferramentas com pré-visualização)
+  wide?: boolean;
 }
 
 // Worker de teste (REQ-VID-COM-047), sem parâmetros na interface. Os parâmetros de teste do worker
@@ -38,9 +44,23 @@ const noop: VideoToolDef = {
   icon: FlaskConical,
 };
 
+// Filtros visuais e ajustes de cor (spec 004; UC-VID-004)
+const filter: VideoToolDef = {
+  id: "filter",
+  label: "Filtros",
+  description: "Aplica um estilo ou ajusta o brilho, o contraste e a saturação.",
+  icon: SlidersHorizontal,
+  defaultParams: () => ({ ...NEUTRAL_FILTER }),
+  Form: FilterPanel,
+  validate: (params) => validateFilter(params as unknown as FilterParams),
+  outputName: (video) => `${video.name.replace(/\.[^.]+$/, "")} (filtros).mp4`,
+  wide: true,
+};
+
 // O menu só mostra as que o servidor aceita (video-limits.tools): o "noop" só aparece fora de produção
 export const VIDEO_TOOLS: VideoToolDef[] = [
-  // trim (spec 002), convert (spec 003), filter (spec 004), detect (spec 005)
+  // trim (spec 002), convert (spec 003), detect (spec 005)
+  filter,
   noop,
 ];
 

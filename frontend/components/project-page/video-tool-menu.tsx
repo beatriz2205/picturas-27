@@ -128,13 +128,13 @@ function ToolDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className={tool.wide ? "max-h-[90vh] overflow-y-auto sm:max-w-[640px]" : "sm:max-w-[480px]"}>
         <DialogHeader>
           <DialogTitle>{tool.label}</DialogTitle>
           <DialogDescription className="truncate">{video.name}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          {tool.Form && <tool.Form video={video} limits={limits} params={params} onChange={setParams} />}
+          {tool.Form && <tool.Form video={video} limits={limits} params={params} onChange={setParams} access={access} />}
           <div className="grid gap-1">
             <Label htmlFor="video-output-name">Nome do resultado (opcional)</Label>
             <Input

@@ -1,0 +1,3 @@
+-r requirements.txt
+-r ../video_utils/requirements-dev.txt
+numpy==2.1.3
