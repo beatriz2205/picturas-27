@@ -82,7 +82,6 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
       )}
       <VideoTaskPanel pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} onOpenResult={openResult} />
       <VideoPlayerDialog video={playing} access={access} onClose={() => setPlaying(null)} />
-      <VideoTaskStatus tasks={tasks.data ?? []} />
       <DetectionsDialog
         detection={viewingDetections}
         source={list.find((item) => item.id === viewingDetections?.sourceVideoId) ?? null}
@@ -90,35 +89,6 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
         onClose={() => setViewingDetections(null)}
       />
     </>
-  );
-}
-
-function VideoTaskStatus({ tasks }: { tasks: import("@/lib/videos").VideoTask[] }) {
-  if (!tasks.length) return null;
-  return (
-    <section className="mt-3 rounded-md border p-3">
-      <h3 className="mb-2 text-sm font-semibold">Processamento de vídeo</h3>
-      <div className="space-y-2">
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center gap-3 text-sm">
-            <span className="min-w-28 font-medium">{task.tool === "detect" ? "Deteção" : task.tool}</span>
-            <span className="text-muted-foreground">
-              {task.status === "queued" ? "Em fila" : task.status === "processing" ? "A processar" : task.status === "completed" ? "Concluída" : task.status === "failed" ? "Falhou" : "Cancelada"}
-            </span>
-            <div className="h-2 min-w-24 flex-1 rounded bg-muted">
-              <div className="h-2 rounded bg-primary transition-all" style={{ width: `${task.progress}%` }} />
-            </div>
-            <span>{task.progress}%</span>
-            {task.status === "completed" && task.metrics?.detections != null && (
-              <span className="text-muted-foreground">{task.metrics.detections} deteções</span>
-            )}
-            {task.status === "failed" && task.reason && (
-              <span className="text-destructive">{task.reason.message}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
 
