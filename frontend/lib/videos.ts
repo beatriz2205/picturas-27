@@ -19,6 +19,8 @@ export interface ProjectVideo {
   acceptedAsInput: boolean;
   sourceVideoId: string | null;
   sourceTaskId: string | null;
+  // miniatura gerada no servidor (proposta SUBMIT-011); sem ela, a interface usa um fotograma do vídeo
+  thumbnailUrl?: string | null;
   createdAt: string;
 }
 

@@ -9,6 +9,7 @@ export function ViewToggle() {
   const view = searchParams.get("view") ?? "grid";
   const mode = searchParams.get("mode") ?? "edit";
   const owner = searchParams.get("owner");
+  const media = searchParams.get("media");
   const router = useRouter();
 
   const buildUrl = (nextView: "grid" | "carousel") => {
@@ -16,6 +17,8 @@ export function ViewToggle() {
     params.set("mode", mode);
     params.set("view", nextView);
     if (owner) params.set("owner", owner);
+    // manter o separador imagens/vídeos
+    if (media) params.set("media", media);
     return `?${params.toString()}`;
   };
 

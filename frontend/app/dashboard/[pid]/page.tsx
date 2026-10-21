@@ -7,6 +7,8 @@ import { ViewToggle } from "@/components/project-page/view-toggle";
 import { AddImagesDialog } from "@/components/project-page/add-images-dialog";
 import { AddVideoDialog } from "@/components/project-page/add-video-dialog";
 import { ProjectVideoList } from "@/components/project-page/project-video-list";
+import { MediaToggle, ProjectMedia } from "@/components/project-page/media-toggle";
+import { VideoTasksButton } from "@/components/project-page/video-task-panel";
 import { useProjectVideos } from "@/lib/queries/videos";
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "@/components/toolbar/toolbar";
@@ -107,6 +109,18 @@ export default function Project({
 
   // se um processamento envolve ferramentas de IA ou não
   const processIsAiRef = useRef<boolean>(false);
+
+  // separador imagens/vídeos; sem parâmetro, um projeto só com vídeos abre nos vídeos
+  const mediaParam = searchParams.get("media");
+  const imageCount = project.data?.imgs.length ?? 0;
+  const videoCount = projectVideos.data?.length ?? 0;
+  const media: ProjectMedia =
+    mediaParam === "videos" || mediaParam === "images"
+      ? mediaParam
+      : imageCount === 0 && videoCount > 0
+        ? "videos"
+        : "images";
+  const showMediaToggle = videoCount > 0 || mediaParam === "videos";
 
   const totalProcessingSteps =
     (project.data?.tools.length ?? 0) * (project.data?.imgs.length ?? 0);
@@ -620,6 +634,10 @@ const handleCancel = () => {
               {project.data.name}
             </h1>
             <div className="flex items-center gap-2 xl:hidden">
+              <VideoTasksButton pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
+              {showMediaToggle && (
+                <MediaToggle media={media} imageCount={imageCount} videoCount={videoCount} />
+              )}
               <ViewToggle />
               <ModeToggle />
             </div>
@@ -830,24 +848,39 @@ const handleCancel = () => {
                     </DropdownMenu>
 
               <div className="hidden xl:flex items-center gap-2">
+                <VideoTasksButton pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
+                {showMediaToggle && (
+                  <MediaToggle media={media} imageCount={imageCount} videoCount={videoCount} />
+                )}
                 <ViewToggle />
                 <ModeToggle />
               </div>
             </div>
           </div>
         </div>
-        {/* Vídeos do projeto (UC-VID-001) */}
-        <ProjectVideoList pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} />
-
         {/* Main Content */}
 
-        <div className="h-full overflow-x-hidden flex">
-        <Toolbar />
-        <ProjectImageList
-          setCurrentImageId={setCurrentImage}
-          results={projectResults.data}
-        />
-      </div>
+        {media === "videos" ? (
+          // Vídeos do projeto (UC-VID-001): lápis = originais, olho = resultados das ferramentas
+          <div className="h-full overflow-y-auto overflow-x-hidden">
+            <ProjectVideoList
+              pid={pid}
+              ownerId={ownerId}
+              shareId={shareId}
+              canEdit={canEdit}
+              mode={mode === "results" ? "results" : "edit"}
+              view={view === "carousel" ? "carousel" : "grid"}
+            />
+          </div>
+        ) : (
+          <div className="h-full overflow-x-hidden flex">
+            <Toolbar />
+            <ProjectImageList
+              setCurrentImageId={setCurrentImage}
+              results={projectResults.data}
+            />
+          </div>
+        )}
       </div>
       <Transition
         show={processing}
