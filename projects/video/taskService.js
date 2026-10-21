@@ -329,6 +329,8 @@ async function ensureAssets(task, outputs) {
     // Outra repetição do evento criou o resultado entretanto: esta thumbnail sobra
     if (thumbKey && !r.upsertedCount) await removeKeys(task.owner_id, [thumbKey]);
   }
+  // Criação terminada: o janitor deixa de ter o que repor, e um resultado removido depois não volta (COM-034)
+  await VideoTask.updateOne({ _id: task._id }, { $set: { result_outputs: [] } });
 }
 
 // processing → completed; os resultados só passam a existir depois desta transição (REQ-VID-COM-029).
@@ -364,7 +366,8 @@ async function complete(taskId, outputs = [], { ownerId } = {}) {
     // Repetição do mesmo evento depois de a transição já ter sido feita
     if (ownerOf.status === "completed" && ownerOf.result_asset_ids.length === outputs.length) {
       task = await VideoTask.findById(taskId);
-      await ensureAssets(task, outputs);
+      // Só se a criação ficou a meio (result_outputs ainda guardado)
+      if (task.result_outputs.length) await ensureAssets(task, outputs);
       return task;
     }
     // Perdeu a corrida (cancelada, falhada por timeout ou origem removida): descartar os ficheiros
@@ -426,8 +429,9 @@ async function repairResults() {
   let repaired = 0;
   for (const task of candidates) {
     const existing = await VideoAsset.countDocuments({ _id: { $in: task.result_asset_ids } });
-    if (existing === task.result_asset_ids.length) continue;
+    // ensureAssets limpa result_outputs; com todos os resultados criados, não cria nenhum
     await ensureAssets(task, task.result_outputs);
+    if (existing === task.result_asset_ids.length) continue;
     emit(task);
     repaired++;
   }

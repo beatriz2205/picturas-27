@@ -311,10 +311,26 @@ test.describe("taskService", { skip }, () => {
     const t = await tasks.accept(ctx(FREE, video));
     await tasks.start(t._id);
     await tasks.complete(t._id, [output()]);
-    await VideoAsset.deleteMany({ source_task_id: t._id }); // simula a falha depois da transição
+    // simula a falha depois da transição: resultado por criar e result_outputs ainda guardado
+    const { result_outputs } = await VideoTask.findById(t._id).lean();
+    await VideoAsset.deleteMany({ source_task_id: t._id });
+    await VideoTask.updateOne({ _id: t._id }, { $set: { result_outputs: [output()] } });
+    assert.strictEqual(result_outputs.length, 0);
     assert.strictEqual(await tasks.repairResults(), 1);
     assert.strictEqual(await VideoAsset.countDocuments({ source_task_id: t._id }), 1);
     assert.strictEqual(await tasks.repairResults(), 0);
+  });
+
+  test("um resultado removido não é recriado pelo janitor nem por um evento repetido (COM-034)", async () => {
+    const video = await makeVideo();
+    const t = await tasks.accept(ctx(FREE, video));
+    await tasks.start(t._id);
+    const out = output();
+    await tasks.complete(t._id, [out]);
+    await VideoAsset.deleteMany({ source_task_id: t._id }); // o utilizador remove o resultado
+    assert.strictEqual(await tasks.repairResults(), 0);
+    await tasks.complete(t._id, [out]);
+    assert.strictEqual(await VideoAsset.countDocuments({ source_task_id: t._id }), 0);
   });
 
   test("transição perdida: completed depois de cancelada apaga os ficheiros e não cria resultado (D7, COM-029)", async () => {
