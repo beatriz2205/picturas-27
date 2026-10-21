@@ -15,3 +15,12 @@ backups/
 # cache do Python
 __pycache__/
 *.py[cod]
+dist/
+build/
+*.log
+.env*
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.idea/

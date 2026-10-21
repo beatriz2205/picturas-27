@@ -226,4 +226,28 @@ router.post("/:user/:project/video-tasks/:task/cancel", auth.checkToken, (req, r
   );
 });
 
+router.post("/:user/:project/video-tasks", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.post(projectsURL + `${ownerId}/${req.params.project}/video-tasks`, req.body, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId, { "Content-Type": "application/json" }),
+    }),
+  );
+});
+
+router.get("/:user/:project/video-tasks", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/video-tasks`, {
+      httpsAgent,
+      params: { ...shareParams(req), status: req.query.status },
+      headers: headersFor(req, callerId),
+    }),
+  );
+});
+
 module.exports = router;

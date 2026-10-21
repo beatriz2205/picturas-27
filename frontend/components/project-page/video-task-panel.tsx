@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, LoaderCircle, Play, X } from "lucide-react";
+import { ChevronDown, ChevronUp, FileJson, LoaderCircle, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,7 @@ const VISIBLE_FINAL = 5;
 // (REQ-VID-COM-013, COM-016, COM-020, COM-031, COM-052)
 export function VideoTaskPanel({ pid, ownerId, shareId, canEdit, onOpenResult }: Props) {
   const session = useSession();
-  const tasks = useVideoTasks(session.user._id, pid, session.token, ownerId, shareId);
+  const tasks = useVideoTasks({ uid: session.user._id, pid, token: session.token, ownerId, shareId });
   const videos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
   const [showAll, setShowAll] = useState(false);
   useVideoTaskUpdates(pid, ownerId, shareId);
@@ -118,7 +118,8 @@ function TaskRow({
         <span className="ml-auto flex shrink-0 gap-1">
           {task.status === "completed" && result && (
             <Button size="sm" variant="outline" onClick={() => onOpenResult(result)}>
-              <Play /> Ver resultado
+              {result.kind === "detections" ? <FileJson /> : <Play />}
+              {result.kind === "detections" ? "Ver deteções" : "Ver resultado"}
             </Button>
           )}
           {active && canEdit && (

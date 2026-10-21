@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Download, Film, LoaderCircle, Play, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Download, FileJson, Film, LoaderCircle, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,10 +10,12 @@ import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/error-messages";
 import { useProjectVideos } from "@/lib/queries/videos";
+import { useVideoTasks } from "@/lib/queries/videos";
 import { useDeleteVideo } from "@/lib/mutations/videos";
 import { fetchVideoUrl, formatCodecs, formatDuration, formatSize, ProjectVideo } from "@/lib/videos";
 import { VideoTaskPanel } from "./video-task-panel";
 import { VideoToolMenu } from "./video-tool-menu";
+import { DetectionsViewer } from "@/components/video-tools/detections-viewer";
 
 interface Props {
   pid: string;
@@ -27,9 +30,29 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
   const session = useSession();
   const access = { uid: session.user._id, pid, token: session.token, ownerId, shareId };
   const videos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
+  const tasks = useVideoTasks({ uid: session.user._id, pid, token: session.token, ownerId, shareId });
+  const queryClient = useQueryClient();
+  const completedTasks = useRef(new Set<string>());
+  useEffect(() => {
+    const newlyCompleted = tasks.data?.some((task) => task.status === "completed" && !completedTasks.current.has(task.id));
+    tasks.data?.filter((task) => task.status === "completed").forEach((task) => completedTasks.current.add(task.id));
+    if (newlyCompleted) {
+      queryClient.invalidateQueries({ queryKey: ["videos", pid] });
+    }
+  }, [tasks.data, queryClient, pid]);
   const [playing, setPlaying] = useState<ProjectVideo | null>(null);
+  const [viewingDetections, setViewingDetections] = useState<ProjectVideo | null>(null);
   const list = videos.data ?? [];
   const names = new Map(list.map((v) => [v.id, v.name]));
+  const openResult = (result: ProjectVideo) => {
+    if (result.kind === "detections") {
+      setPlaying(null);
+      setViewingDetections(result);
+    } else {
+      setViewingDetections(null);
+      setPlaying(result);
+    }
+  };
 
   return (
     <>
@@ -39,20 +62,63 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
           <div className="flex gap-3 overflow-x-auto pb-1">
             {list.map((v) => (
               <VideoCard
-                key={v.id}
-                video={v}
+               
+            key={v.id}
+               
+            video={v}
                 sourceName={v.sourceVideoId ? names.get(v.sourceVideoId) ?? null : undefined}
-                access={access}
-                canEdit={canEdit}
-                onPlay={() => setPlaying(v)}
-              />
+               
+            access={access}
+               
+            canEdit={canEdit}
+               
+            onPlay={() => setPlaying(v)}
+             
+            onViewDetections={() => setViewingDetections(v)}
+          />
             ))}
           </div>
         </section>
       )}
-      <VideoTaskPanel pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} onOpenResult={setPlaying} />
+      <VideoTaskPanel pid={pid} ownerId={ownerId} shareId={shareId} canEdit={canEdit} onOpenResult={openResult} />
       <VideoPlayerDialog video={playing} access={access} onClose={() => setPlaying(null)} />
+      <VideoTaskStatus tasks={tasks.data ?? []} />
+      <DetectionsDialog
+        detection={viewingDetections}
+        source={list.find((item) => item.id === viewingDetections?.sourceVideoId) ?? null}
+        access={access}
+        onClose={() => setViewingDetections(null)}
+      />
     </>
+  );
+}
+
+function VideoTaskStatus({ tasks }: { tasks: import("@/lib/videos").VideoTask[] }) {
+  if (!tasks.length) return null;
+  return (
+    <section className="mt-3 rounded-md border p-3">
+      <h3 className="mb-2 text-sm font-semibold">Processamento de vídeo</h3>
+      <div className="space-y-2">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center gap-3 text-sm">
+            <span className="min-w-28 font-medium">{task.tool === "detect" ? "Deteção" : task.tool}</span>
+            <span className="text-muted-foreground">
+              {task.status === "queued" ? "Em fila" : task.status === "processing" ? "A processar" : task.status === "completed" ? "Concluída" : task.status === "failed" ? "Falhou" : "Cancelada"}
+            </span>
+            <div className="h-2 min-w-24 flex-1 rounded bg-muted">
+              <div className="h-2 rounded bg-primary transition-all" style={{ width: `${task.progress}%` }} />
+            </div>
+            <span>{task.progress}%</span>
+            {task.status === "completed" && task.metrics?.detections != null && (
+              <span className="text-muted-foreground">{task.metrics.detections} deteções</span>
+            )}
+            {task.status === "failed" && task.reason && (
+              <span className="text-destructive">{task.reason.message}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -62,6 +128,7 @@ function VideoCard({
   access,
   canEdit,
   onPlay,
+  onViewDetections,
 }: {
   video: ProjectVideo;
   // nome do vídeo de origem (resultados); null se a origem foi removida
@@ -69,11 +136,11 @@ function VideoCard({
   access: { uid: string; pid: string; token: string; ownerId?: string; shareId?: string };
   canEdit: boolean;
   onPlay: () => void;
+  onViewDetections: () => void;
 }) {
   const { toast } = useToast();
   const remove = useDeleteVideo(access.pid);
   const [downloading, setDownloading] = useState(false);
-
   async function download() {
     setDownloading(true);
     try {
@@ -138,7 +205,51 @@ function VideoCard({
           </Button>
         )}
       </div>
+      {video.kind === "detections" && (
+        <Button size="sm" variant="outline" onClick={onViewDetections}>
+          <FileJson /> Ver deteções
+        </Button>
+      )}
     </Card>
+  );
+}
+
+function DetectionsDialog({
+  detection,
+  source,
+  access,
+  onClose,
+}: {
+  detection: ProjectVideo | null;
+  source: ProjectVideo | null;
+  access: { uid: string; pid: string; token: string; ownerId?: string; shareId?: string };
+  onClose: () => void;
+}) {
+  const [detectionUrl, setDetectionUrl] = useState<string | null>(null);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setDetectionUrl(null);
+    setSourceUrl(null);
+    if (!detection || !source) return;
+    Promise.all([
+      fetchVideoUrl({ ...access, videoId: detection.id }),
+      fetchVideoUrl({ ...access, videoId: source.id }),
+    ]).then(([json, video]) => {
+      setDetectionUrl(json.url);
+      setSourceUrl(video.url);
+    }).catch(() => {
+      setDetectionUrl(null);
+      setSourceUrl(null);
+    });
+  }, [access, detection, source]);
+
+  return (
+    <Dialog open={!!detection} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-[1100px]">
+        <DialogHeader><DialogTitle>{detection?.name}</DialogTitle></DialogHeader>
+        {detectionUrl && sourceUrl ? <DetectionsViewer videoUrl={sourceUrl} detectionsUrl={detectionUrl} /> : <LoaderCircle className="mx-auto animate-spin" />}
+      </DialogContent>
+    </Dialog>
   );
 }
 

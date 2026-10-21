@@ -46,5 +46,10 @@ module.exports = {
   //   outputs    tipos de resultado ("video", "detections")
   //   dedup      true para recusar pedidos idênticos ativos (DUPLICATE_TASK, TRIM-008)
   // O "noop" (worker de teste, REQ-VID-COM-047) só existe fora de produção.
-  VIDEO_TOOLS: process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") },
+  VIDEO_TOOLS: process.env.NODE_ENV === "production"
+    ? { detect: require("../video/tools/detect") }
+    : {
+        noop: require("../video/tools/noop"),
+        detect: require("../video/tools/detect"),
+      },
 };

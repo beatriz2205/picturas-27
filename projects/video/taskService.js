@@ -220,6 +220,28 @@ async function accept({ callerId, profile, ownerId, projectId, body = {} }) {
   return task;
 }
 
+async function retryQueuedTasks() {
+  const queued = await VideoTask.find({ status: "queued" }).sort({ queuedAt: 1 }).limit(50);
+  let published = 0;
+  for (const task of queued) {
+    const tool = VIDEO_TOOLS[task.tool];
+    const video = await VideoAsset.findById(task.source_video_id);
+    if (!tool || !video) {
+      await fail(task._id, "source_video_removed");
+      continue;
+    }
+    try {
+      const timeoutS = Math.ceil(timeoutMs(video.duration_s) / 1000);
+      const url = await deps.storage.internalUrl(String(task.owner_id), video.storage_key, { expiresS: timeoutS + 300 });
+      await deps.broker.publishTask(tool.queue, buildTaskMessage(task, video, url, timeoutS), task.priority);
+      published++;
+    } catch (error) {
+      console.error("[video] falha ao recuperar tarefa em fila", String(task._id), error.message);
+    }
+  }
+  return published;
+}
+
 // ---------------------------------------------------------------- eventos do worker
 
 async function start(taskId) {
@@ -394,6 +416,7 @@ async function repairResults() {
 
 module.exports = {
   accept,
+  retryQueuedTasks,
   repairResults,
   transition,
   start,

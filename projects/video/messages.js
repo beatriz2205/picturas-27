@@ -30,6 +30,7 @@ function buildTaskMessage(task, video, url, timeoutS) {
     tool: task.tool,
     ownerId: String(task.owner_id),
     projectId: String(task.project_id),
+    sourceVideoId: String(task.source_video_id),
     input: {
       url,
       durationS: video.duration_s,

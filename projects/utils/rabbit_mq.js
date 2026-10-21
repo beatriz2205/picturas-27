@@ -19,7 +19,13 @@ function send_rabbit_msg(msg, queue) {
                 durable: true
             });
 
-            channel.publish(exchange, queue, Buffer.from(JSON.stringify(msg)));
+            channel.assertQueue(queue, { durable: true }, (queueErr) => {
+                if (queueErr) throw queueErr;
+                channel.bindQueue(queue, exchange, queue, {}, (bindErr) => {
+                    if (bindErr) throw bindErr;
+                    channel.publish(exchange, queue, Buffer.from(JSON.stringify(msg)));
+                });
+            });
         });
         
         setTimeout(() => {
@@ -44,11 +50,14 @@ function read_rabbit_msg(queue, callback) {
                 if(err_queue) throw err_queue;
 
                 channel.consume(q.queue, (msg) => {
-                    if(msg != null){
-                        callback(msg);
-                        // Acknowledge the message
-                        channel.ack(msg);
-                    }
+                if (msg != null) {
+                    Promise.resolve(callback(msg))
+                        .then(() => channel.ack(msg))
+                        .catch((error) => {
+                            console.error(`[rabbitmq] failed to process ${queue}:`, error.message);
+                            channel.nack(msg, false, true);
+                        });
+                }
                 }, {
                     noAck: false
                 });

@@ -4,6 +4,9 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 })
 const eslintConfig = [
+  {
+    ignores: ['node_modules/**', 'dist/**', 'build/**', 'coverage/**', '**/*.min.js'],
+  },
   ...compat.config({
     extends: ['next'],
     rules: {

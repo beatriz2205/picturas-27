@@ -49,6 +49,7 @@ export interface VideoTask {
   queuedAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  metrics?: { frames?: number; detections?: number; processingMs?: number };
   // só nas notificações pendentes
   ownerId?: string;
 }

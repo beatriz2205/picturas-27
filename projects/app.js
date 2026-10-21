@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 
 const { router: projectsRouter, process_msg } = require("./routes/projects");
 const { router: videosRouter } = require("./routes/videos");
+const { retryQueuedTasks } = require("./video/taskService");
 
 // Run Docker
 const mongoDB = "mongodb://projects_mongoDB:27018/project";
@@ -49,6 +50,9 @@ process_msg();
 require("./video/events").startEventConsumer();
 require("./video/watchdog").startWatchdog();
 require("./video/janitor").startJanitor();
+setTimeout(() => {
+  retryQueuedTasks().catch((error) => console.error("[video] recuperação de tarefas em fila falhou:", error.message));
+}, 5000).unref();
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
