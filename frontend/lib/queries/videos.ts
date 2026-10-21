@@ -31,11 +31,9 @@ export const videoTasksKey = (pid: string) => ["video-tasks", pid];
 // Tarefas do projeto (REQ-VID-COM-031); mantidas atualizadas por use-video-tasks (socket)
 export const useVideoTasks = (access: { uid: string; pid: string; token: string; ownerId?: string; shareId?: string }) =>
   useQuery({
-    queryKey: ["video-tasks", access.pid, access.uid, access.ownerId, access.shareId],
+    queryKey: videoTasksKey(access.pid),
     queryFn: () => fetchVideoTasks({ ...access, status: "all" }),
     enabled: !!access.token && !!access.pid,
-    refetchInterval: (query) =>
-      query.state.data?.some((task) => task.status === "queued" || task.status === "processing") ? 2000 : false,
   });
 
 // Estilos dos filtros (spec 004): configuração do servidor, não muda durante a sessão

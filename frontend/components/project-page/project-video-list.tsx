@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Download, FileJson, Film, LoaderCircle, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/error-messages";
 import { useProjectVideos } from "@/lib/queries/videos";
-import { useVideoTasks } from "@/lib/queries/videos";
 import { useDeleteVideo } from "@/lib/mutations/videos";
 import { fetchVideoUrl, formatCodecs, formatDuration, formatSize, ProjectVideo } from "@/lib/videos";
 import { VideoTaskPanel } from "./video-task-panel";
@@ -30,16 +28,6 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
   const session = useSession();
   const access = { uid: session.user._id, pid, token: session.token, ownerId, shareId };
   const videos = useProjectVideos(session.user._id, pid, session.token, ownerId, shareId);
-  const tasks = useVideoTasks({ uid: session.user._id, pid, token: session.token, ownerId, shareId });
-  const queryClient = useQueryClient();
-  const completedTasks = useRef(new Set<string>());
-  useEffect(() => {
-    const newlyCompleted = tasks.data?.some((task) => task.status === "completed" && !completedTasks.current.has(task.id));
-    tasks.data?.filter((task) => task.status === "completed").forEach((task) => completedTasks.current.add(task.id));
-    if (newlyCompleted) {
-      queryClient.invalidateQueries({ queryKey: ["videos", pid] });
-    }
-  }, [tasks.data, queryClient, pid]);
   const [playing, setPlaying] = useState<ProjectVideo | null>(null);
   const [viewingDetections, setViewingDetections] = useState<ProjectVideo | null>(null);
   const list = videos.data ?? [];
@@ -62,20 +50,14 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit }: Props) {
           <div className="flex gap-3 overflow-x-auto pb-1">
             {list.map((v) => (
               <VideoCard
-               
-            key={v.id}
-               
-            video={v}
+                key={v.id}
+                video={v}
                 sourceName={v.sourceVideoId ? names.get(v.sourceVideoId) ?? null : undefined}
-               
-            access={access}
-               
-            canEdit={canEdit}
-               
-            onPlay={() => setPlaying(v)}
-             
-            onViewDetections={() => setViewingDetections(v)}
-          />
+                access={access}
+                canEdit={canEdit}
+                onPlay={() => setPlaying(v)}
+                onViewDetections={() => setViewingDetections(v)}
+              />
             ))}
           </div>
         </section>
