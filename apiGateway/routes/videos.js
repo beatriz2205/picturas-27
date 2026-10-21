@@ -178,6 +178,18 @@ router.get("/:user/:project/videos/:video/filter-options", auth.checkToken, (req
   );
 });
 
+router.get("/:user/:project/videos/:video/convert-options", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/videos/${req.params.video}/convert-options`, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
 router.get("/:user/:project/videos/:video/url", auth.checkToken, (req, res) => {
   const { ownerId, callerId } = ids(req);
   forward(

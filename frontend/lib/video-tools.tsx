@@ -2,7 +2,7 @@
 // Cada spec de ferramenta (002 a 005) acrescenta aqui a sua entrada, com o mesmo id do
 // VIDEO_TOOLS de projects/config/video.js.
 import type { ComponentType } from "react";
-import { FlaskConical, Scissors, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { FlaskConical, Scissors, RefreshCw, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { FilterPanel } from "@/components/video-tools/filter-panel";
 import { TrimEditor } from "@/components/video-tools/trim-editor";
 import { FilterParams, NEUTRAL_FILTER, validateFilter } from "./video-filters";
@@ -98,10 +98,19 @@ const trim: VideoToolDef = {
   duplicateMessage: "Este recorte já está em curso.",
 };
 
+const convert: VideoToolDef = {
+  id: "convert",
+  label: "Converter",
+  description: "Converte o formato ou reduz a resolução do vídeo.",
+  icon: RefreshCw,
+};
+
 // O menu só mostra as que o servidor aceita (video-limits.tools): o "noop" só aparece fora de produção
 export const VIDEO_TOOLS: VideoToolDef[] = [
   // convert (spec 003), detect (spec 005)
   trim,
+  // trim (spec 002), detect (spec 005)
+  convert,
   filter,
   noop,
 ];

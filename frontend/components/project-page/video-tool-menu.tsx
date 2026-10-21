@@ -28,6 +28,7 @@ import { availableTools, VideoToolDef, VideoToolParams } from "@/lib/video-tools
 import { Access, ProjectVideo, VideoLimits, VideoTask, videoApiError } from "@/lib/videos";
 import { OutputNameField } from "@/components/video-tools/output-name-field";
 import { highlightVideoTask } from "./video-task-panel";
+import { ConvertDialog } from "@/components/video-tools/convert-dialog";
 
 // Motivo por que as ferramentas não podem ser usadas neste vídeo, ou null (REQ-VID-COM-001, COM-008,
 // COM-018, COM-021, CONV-004). O servidor volta a validar tudo na aceitação.
@@ -35,7 +36,11 @@ function disabledReason(video: ProjectVideo, limits: VideoLimits | undefined, li
   if (!canEdit) return "Sem permissão de edição neste projeto.";
   if (limitsError) return "Inicie sessão com uma conta registada para usar as ferramentas de vídeo.";
   if (!limits) return "A carregar…";
-  if (!video.acceptedAsInput) return "Este vídeo não pode ser usado como entrada (só MP4 com H.264 e AAC ou sem áudio).";
+  if (!video.acceptedAsInput) {
+    return video.container === "webm"
+      ? "Formato de vídeo não suportado como entrada (só MP4/H.264/AAC)"
+      : "Este vídeo não pode ser usado como entrada (só MP4 com H.264 e AAC ou sem áudio).";
+  }
   const l = limits.limits;
   const plan = limits.profile === "premium" ? "Premium" : "Free";
   if (video.sizeBytes > l.maxBytes) return `O vídeo excede o tamanho máximo do plano ${plan}.`;
@@ -87,7 +92,10 @@ export function VideoToolMenu({ video, access, canEdit }: { video: ProjectVideo;
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {tool && limits.data && (
+      {tool?.id === "convert" && limits.data && (
+        <ConvertDialog video={video} limits={limits.data} access={access} onClose={() => setTool(null)} />
+      )}
+      {tool && tool.id !== "convert" && limits.data && (
         <ToolDialog tool={tool} video={video} limits={limits.data} access={access} onClose={() => setTool(null)} />
       )}
     </>

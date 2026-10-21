@@ -49,6 +49,7 @@ module.exports = {
   VIDEO_TOOLS: {
     ...(process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") }),
     trim: require("../video/tools/trim"),
+    convert: require("../video/tools/convert"),
     filter: require("../video/tools/filter"),
   },
 
