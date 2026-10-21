@@ -11,8 +11,6 @@ export default function OperationsCounter() {
 
   const remaining = user.remaining_operations;
 
-  console.log("SESSION USER:", user);
-  console.log("remaining:", remaining);
   // Se ainda não tivermos o valor (primeiros ms), não mostra nada
   if (remaining === undefined || remaining === null) return null;
   return (

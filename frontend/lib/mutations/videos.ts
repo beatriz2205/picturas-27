@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cancelVideoTask, createProjectWithVideo, createVideoTask, deleteVideo, uploadVideo, VideoTask } from "../videos";
 import { videosKey, videoTasksKey } from "../queries/videos";
+import { SessionData, validateSession } from "../session";
 
 type Params<F extends (...args: never[]) => unknown> = Parameters<F>[0];
 
@@ -38,9 +39,32 @@ export const useCreateVideoTask = (pid: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (p: Params<typeof createVideoTask>) => createVideoTask(p),
-    onSuccess: (task) => {
+    onSuccess: async (task) => {
       qc.setQueryData<VideoTask[]>(videoTasksKey(pid), (list) => upsertTask(list, task));
       qc.invalidateQueries({ queryKey: ["video-limits"] });
+
+      const raw = localStorage.getItem("session");
+      if (!raw) {
+        qc.invalidateQueries({ queryKey: ["session"], refetchType: "all" });
+        return;
+      }
+
+      try {
+        const current = JSON.parse(raw) as SessionData;
+        const updated = await validateSession({
+          userId: current.user._id,
+          token: current.token,
+        });
+        const newSession: SessionData = {
+          user: updated.user,
+          token: updated.token,
+        };
+        localStorage.setItem("session", JSON.stringify(newSession));
+        qc.setQueryData(["session"], newSession);
+        window.dispatchEvent(new Event("session-updated"));
+      } catch (error) {
+        console.error("[video] falha ao atualizar operações da sessão", error);
+      }
     },
   });
 };
