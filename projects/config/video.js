@@ -47,9 +47,24 @@ module.exports = {
   //   dedup      true para recusar pedidos idênticos ativos (DUPLICATE_TASK, TRIM-008)
   // O "noop" (worker de teste, REQ-VID-COM-047) só existe fora de produção.
   VIDEO_TOOLS: process.env.NODE_ENV === "production"
-    ? { detect: require("../video/tools/detect") }
+    ? {
+        detect: require("../video/tools/detect"),
+        trim: require("../video/tools/trim"),
+        convert: require("../video/tools/convert"),
+        filter: require("../video/tools/filter"),
+      }
     : {
         noop: require("../video/tools/noop"),
         detect: require("../video/tools/detect"),
+        trim: require("../video/tools/trim"),
+        convert: require("../video/tools/convert"),
+        filter: require("../video/tools/filter"),
       },
+  // REQ-VID-FLT-001/002 (spec 004, research F3): estilos predefinidos dos filtros.
+  FILTER_STYLES: [
+    { id: "bw", label: "Preto e Branco", brightness: 0, contrast: 10, saturation: -100, tint: null },
+    { id: "sepia", label: "Sépia", brightness: 5, contrast: 0, saturation: -100, tint: "sepia" },
+    { id: "vintage", label: "Vintage", brightness: 5, contrast: -15, saturation: -35, tint: "sepia30" },
+  ],
+  FILTER_RANGE: { min: -100, max: 100, neutral: 0 },
 };

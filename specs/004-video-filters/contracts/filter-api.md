@@ -21,6 +21,10 @@ Usa as rotas de [000-video-common/contracts/public-api.md](../../000-video-commo
   "params": { "style": "bw", "brightness": 0, "contrast": 10, "saturation": -100 } }
 ```
 
+`tint` (`null`, `"sepia"`, `"sepia30"`) é opcional: se faltar, usa-se a tonalidade do estilo
+(`null` para `none` e `custom`). O frontend envia-a sempre, para manter a tonalidade de um estilo
+ajustado à mão (FA1: `"style": "custom", "tint": "sepia"`). Valores omitidos contam como 0.
+
 | Erro | Quando |
 |---|---|
 | `400 INVALID_PARAMS`, `fields.brightness`/`contrast`/`saturation` | Fora de −100..+100 ou não inteiro (FLT-003, E2) |

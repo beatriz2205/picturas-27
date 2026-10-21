@@ -71,6 +71,10 @@ export interface VideoApiError {
   message: string;
   limit?: { name: string; value: number | string; unit: string; profile: string };
   upgrade?: boolean;
+  // 409 DUPLICATE_TASK: a tarefa igual já em curso (TRIM-008)
+  task?: VideoTask;
+  fields?: Record<string, string>;
+  options?: ConvertOptions;
 }
 
 export function videoApiError(error: unknown): VideoApiError | null {
@@ -124,6 +128,64 @@ export const fetchVideoUrl = async (access: Access & { videoId: string; download
   const { base, query } = projectPath(access);
   const extra = access.download ? `${query ? "&" : "?"}download=1` : "";
   const r = await api.get<{ url: string; expiresAt: string }>(`${base}/${access.videoId}/url${query}${extra}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
+
+// Estilos e intervalo dos filtros (specs/004-video-filters/contracts/filter-api.md)
+export interface FilterStyle {
+  id: string;
+  label: string;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  tint: string | null;
+}
+
+export interface FilterOptions {
+  styles: FilterStyle[];
+  range: { min: number; max: number; neutral: number };
+}
+
+export type VideoOutputFormat = "mp4" | "webm";
+
+export interface ConvertOptions {
+  source: {
+    container: "mp4";
+    videoCodec: string;
+    audioCodec: string | null;
+    width: number;
+    height: number;
+    durationS: number;
+    sizeBytes: number;
+  };
+  formats: { id: VideoOutputFormat; label: string }[];
+  heights: { value: number; label: string }[];
+  defaults: { format: VideoOutputFormat; height: number };
+}
+
+export const fetchConvertOptions = async (access: Access & { videoId: string }) => {
+  const { base, query } = projectPath(access);
+  const r = await api.get<ConvertOptions>(`${base}/${access.videoId}/convert-options${query}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
+
+export const fetchFilterOptions = async (access: Access & { videoId: string }) => {
+  const { base, query } = projectPath(access);
+  const r = await api.get<FilterOptions>(`${base}/${access.videoId}/filter-options${query}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
+
+// Nome de resultado livre no projeto (specs/002-video-trim/contracts/trim-api.md; TRIM-007)
+export const fetchNameAvailable = async (access: Access & { name: string }) => {
+  const { base, query } = projectPath(access);
+  const name = `${query ? "&" : "?"}name=${encodeURIComponent(access.name)}`;
+  const r = await api.get<{ available: boolean; suggestion: string }>(`${base}/name-available${query}${name}`, {
     headers: authHeader(access.token),
   });
   return r.data;

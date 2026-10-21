@@ -140,11 +140,49 @@ router.post("/:user/:project/videos", auth.checkToken, async (req, res) => {
   forward(res, streamTo(req, projectsURL + `${ownerId}/${req.params.project}/videos`, callerId));
 });
 
+// Nome de resultado livre (spec 002, contracts/trim-api.md); antes de /videos/:video
+router.get("/:user/:project/videos/name-available", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/videos/name-available`, {
+      httpsAgent,
+      params: { ...shareParams(req), name: req.query.name },
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
 router.get("/:user/:project/videos/:video", auth.checkToken, (req, res) => {
   const { ownerId, callerId } = ids(req);
   forward(
     res,
     axios.get(projectsURL + `${ownerId}/${req.params.project}/videos/${req.params.video}`, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+// Estilos dos filtros (spec 004, contracts/filter-api.md)
+router.get("/:user/:project/videos/:video/filter-options", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/videos/${req.params.video}/filter-options`, {
+      httpsAgent,
+      params: shareParams(req),
+      headers: headersFor(req, callerId),
+    })
+  );
+});
+
+router.get("/:user/:project/videos/:video/convert-options", auth.checkToken, (req, res) => {
+  const { ownerId, callerId } = ids(req);
+  forward(
+    res,
+    axios.get(projectsURL + `${ownerId}/${req.params.project}/videos/${req.params.video}/convert-options`, {
       httpsAgent,
       params: shareParams(req),
       headers: headersFor(req, callerId),

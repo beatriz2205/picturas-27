@@ -23,6 +23,11 @@ ffmpeg -hide_banner -y -progress pipe:1 -nostats \
 - `+faststart` permite reproduzir no navegador antes de o ficheiro descarregar todo (COM-044).
 - `veryfast` + CRF 20 é o compromisso para 1 vCPU (TRIM-011); a confirmar na medição.
 
+**Medição (T018, TRIM-011)**: `bench.sh` com 20 recortes de 10–40 s de `ok_1080p_60s.mp4` (resolução
+original, `veryfast`/CRF 20, 1 vCPU por réplica): mín 35,1 s, mediana 37,5 s, **percentil 95 46,7 s**,
+máx 54,6 s (a primeira execução, com a cache fria e outra tarefa na segunda réplica). TRIM-011
+cumprido sem alterar o `-preset`; `VIDEO_TRIM_PRESET` fica para ajustes futuros.
+
 **Alternatives considered**: `-c copy` (sem recodificação), rejeitado porque só corta em fotogramas-chave
 (RN4, Q7).
 

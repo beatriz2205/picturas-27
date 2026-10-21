@@ -1,0 +1,2 @@
+-r ../video_utils/requirements.txt
+pillow==11.0.0

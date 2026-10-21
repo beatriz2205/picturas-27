@@ -325,6 +325,43 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
   }
 });
 
+// Nome de resultado livre no projeto (spec 002, contracts/trim-api.md; REQ-VID-TRIM-007).
+// Declarada antes de /videos/:video. A sugestão é a mesma que o uniqueName aplica na conclusão.
+router.get("/:user/:project/videos/name-available", checkSharePermission, async (req, res) => {
+  try {
+    await loadProjectOr404(req.params.user, req.params.project);
+    const name = String(req.query.name || "").trim();
+    if (!name) throw new VideoError("INVALID_PARAMS", 400, "Indique o nome.", { fields: { name: "Obrigatório" } });
+    const suggestion = await uniqueName(VideoAsset, req.params.project, name);
+    res.status(200).json({ available: suggestion === name, suggestion });
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Estilos e intervalo dos filtros (spec 004, contracts/filter-api.md; REQ-VID-FLT-001)
+router.get("/:user/:project/videos/:video/filter-options", checkSharePermission, async (req, res) => {
+  try {
+    await loadProjectOr404(req.params.user, req.params.project);
+    await loadVideoOr404(req.params.project, req.params.video);
+    res.status(200).json(VIDEO_TOOLS.filter.options());
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
+// Formatos e resoluções disponíveis para conversão (spec 003, contracts/convert-api.md).
+router.get("/:user/:project/videos/:video/convert-options", checkSharePermission, async (req, res) => {
+  try {
+    const { profile } = await callerProfile(req);
+    await loadProjectOr404(req.params.user, req.params.project);
+    const video = await loadVideoOr404(req.params.project, req.params.video);
+    res.status(200).json(VIDEO_TOOLS.convert.options(video, profile));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
 router.get("/:user/:project/videos/:video", checkSharePermission, async (req, res) => {
   try {
     await loadProjectOr404(req.params.user, req.params.project);
@@ -381,12 +418,16 @@ router.post("/:user/:project/video-tasks", checkSharePermission, requireEditPerm
   try {
     const { callerId, profile } = await callerProfile(req);
     await loadProjectOr404(req.params.user, req.params.project);
+    const body = req.body || {};
+    if (body.tool === "convert") {
+      body.outputName = VIDEO_TOOLS.convert.correctOutputName(body.outputName, body.params && body.params.format);
+    }
     const task = await tasks.accept({
       callerId,
       profile,
       ownerId: req.params.user,
       projectId: req.params.project,
-      body: req.body || {},
+      body,
     });
     res.status(202).json(toTaskDTO(task));
   } catch (err) {

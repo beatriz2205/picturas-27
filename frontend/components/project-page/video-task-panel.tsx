@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, FileJson, LoaderCircle, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +11,7 @@ import { useVideoErrorToast } from "@/hooks/use-video-error-toast";
 import { useVideoTaskUpdates } from "@/hooks/use-video-tasks";
 import { useProjectVideos, useVideoTasks } from "@/lib/queries/videos";
 import { useCancelVideoTask } from "@/lib/mutations/videos";
+import { cn } from "@/lib/utils";
 import { toolLabel } from "@/lib/video-tools";
 import { isFinal, ProjectVideo, STATUS_LABELS, VideoTask } from "@/lib/videos";
 
@@ -31,6 +32,35 @@ const STATUS_VARIANT: Record<VideoTask["status"], "default" | "secondary" | "des
 };
 
 const VISIBLE_FINAL = 5;
+
+// Destacar uma tarefa no painel, por exemplo a já em curso de um pedido duplicado (TRIM-008)
+const HIGHLIGHT_EVENT = "video-task-highlight";
+const HIGHLIGHT_MS = 3000;
+
+export function highlightVideoTask(taskId: string) {
+  window.dispatchEvent(new CustomEvent<string>(HIGHLIGHT_EVENT, { detail: taskId }));
+}
+
+function useHighlighted(taskId: string) {
+  const ref = useRef<HTMLLIElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const listener = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== taskId) return;
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      setOn(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setOn(false), HIGHLIGHT_MS);
+    };
+    window.addEventListener(HIGHLIGHT_EVENT, listener);
+    return () => {
+      window.removeEventListener(HIGHLIGHT_EVENT, listener);
+      clearTimeout(timer);
+    };
+  }, [taskId]);
+  return { ref, on };
+}
 
 // Tarefas de vídeo do projeto: estado, progresso, motivo, cancelar e abrir o resultado
 // (REQ-VID-COM-013, COM-016, COM-020, COM-031, COM-052)
@@ -96,6 +126,7 @@ function TaskRow({
   const { toast } = useToast();
   const showError = useVideoErrorToast();
   const active = !isFinal(task.status);
+  const highlight = useHighlighted(task.id);
 
   function handleCancel() {
     cancel.mutate(
@@ -108,7 +139,10 @@ function TaskRow({
   }
 
   return (
-    <li className="flex flex-col gap-1 rounded-md border p-2 text-sm">
+    <li
+      ref={highlight.ref}
+      className={cn("flex flex-col gap-1 rounded-md border p-2 text-sm transition-shadow", highlight.on && "ring-2 ring-primary")}
+    >
       <div className="flex items-center gap-2">
         <Badge variant={STATUS_VARIANT[task.status]}>{STATUS_LABELS[task.status]}</Badge>
         <span className="font-medium">{toolLabel(task.tool)}</span>

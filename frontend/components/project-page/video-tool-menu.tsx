@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +22,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useVideoErrorToast } from "@/hooks/use-video-error-toast";
-import { useVideoLimits } from "@/lib/queries/videos";
-import { useCreateVideoTask } from "@/lib/mutations/videos";
+import { useVideoLimits, videoTasksKey } from "@/lib/queries/videos";
+import { upsertTask, useCreateVideoTask } from "@/lib/mutations/videos";
 import { availableTools, VideoToolDef, VideoToolParams } from "@/lib/video-tools";
-import { Access, ProjectVideo, VideoLimits } from "@/lib/videos";
+import { Access, ProjectVideo, VideoLimits, VideoTask, videoApiError } from "@/lib/videos";
+import { OutputNameField } from "@/components/video-tools/output-name-field";
+import { highlightVideoTask } from "./video-task-panel";
+import { ConvertDialog } from "@/components/video-tools/convert-dialog";
 
 // Motivo por que as ferramentas não podem ser usadas neste vídeo, ou null (REQ-VID-COM-001, COM-008,
 // COM-018, COM-021, CONV-004). O servidor volta a validar tudo na aceitação.
@@ -34,7 +36,11 @@ function disabledReason(video: ProjectVideo, limits: VideoLimits | undefined, li
   if (!canEdit) return "Sem permissão de edição neste projeto.";
   if (limitsError) return "Inicie sessão com uma conta registada para usar as ferramentas de vídeo.";
   if (!limits) return "A carregar…";
-  if (!video.acceptedAsInput) return "Este vídeo não pode ser usado como entrada (só MP4 com H.264 e AAC ou sem áudio).";
+  if (!video.acceptedAsInput) {
+    return video.container === "webm"
+      ? "Formato de vídeo não suportado como entrada (só MP4/H.264/AAC)"
+      : "Este vídeo não pode ser usado como entrada (só MP4 com H.264 e AAC ou sem áudio).";
+  }
   const l = limits.limits;
   const plan = limits.profile === "premium" ? "Premium" : "Free";
   if (video.sizeBytes > l.maxBytes) return `O vídeo excede o tamanho máximo do plano ${plan}.`;
@@ -86,7 +92,10 @@ export function VideoToolMenu({ video, access, canEdit }: { video: ProjectVideo;
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {tool && limits.data && (
+      {tool?.id === "convert" && limits.data && (
+        <ConvertDialog video={video} limits={limits.data} access={access} onClose={() => setTool(null)} />
+      )}
+      {tool && tool.id !== "convert" && limits.data && (
         <ToolDialog tool={tool} video={video} limits={limits.data} access={access} onClose={() => setTool(null)} />
       )}
     </>
@@ -107,8 +116,12 @@ function ToolDialog({
   onClose: () => void;
 }) {
   const [params, setParams] = useState<VideoToolParams>(() => tool.defaultParams?.(video, limits) ?? {});
-  const [outputName, setOutputName] = useState(() => tool.outputName?.(video) ?? "");
+  // null: o nome sugerido acompanha os parâmetros até o utilizador o mudar
+  const [typedName, setTypedName] = useState<string | null>(null);
+  const [nameReady, setNameReady] = useState(true);
+  const outputName = typedName ?? tool.outputName?.(video, params) ?? "";
   const create = useCreateVideoTask(access.pid);
+  const qc = useQueryClient();
   const { toast } = useToast();
   const showError = useVideoErrorToast();
   const clientError = tool.validate?.(params, video) ?? null;
@@ -121,30 +134,39 @@ function ToolDialog({
           toast({ title: "Tarefa em fila", description: `${tool.label}: acompanhe o progresso no painel de tarefas.` });
           onClose();
         },
-        onError: (error) => showError("video-task", error),
+        onError: (error) => {
+          // TRIM-008: mostrar a tarefa igual que já está em curso em vez de um erro
+          const apiError = videoApiError(error);
+          if (apiError?.code === "DUPLICATE_TASK" && apiError.task) {
+            const task = apiError.task;
+            qc.setQueryData<VideoTask[]>(videoTasksKey(access.pid), (list) => upsertTask(list, task));
+            toast({ title: tool.duplicateMessage ?? "Este pedido já está em curso.", description: "A tarefa existente está destacada no painel." });
+            onClose();
+            highlightVideoTask(task.id);
+            return;
+          }
+          showError("video-task", error);
+        },
       },
     );
   }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className={tool.wide ? "max-h-[90vh] overflow-y-auto sm:max-w-[640px]" : "sm:max-w-[480px]"}>
         <DialogHeader>
           <DialogTitle>{tool.label}</DialogTitle>
           <DialogDescription className="truncate">{video.name}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          {tool.Form && <tool.Form video={video} limits={limits} params={params} onChange={setParams} />}
-          <div className="grid gap-1">
-            <Label htmlFor="video-output-name">Nome do resultado (opcional)</Label>
-            <Input
-              id="video-output-name"
-              placeholder={video.name}
-              value={outputName}
-              maxLength={200}
-              onChange={(e) => setOutputName(e.target.value)}
-            />
-          </div>
+          {tool.Form && <tool.Form video={video} limits={limits} params={params} onChange={setParams} access={access} outputName={outputName} />}
+          <OutputNameField
+            access={access}
+            value={outputName}
+            placeholder={video.name}
+            onChange={setTypedName}
+            onReadyChange={setNameReady}
+          />
           {clientError && <p className="text-sm text-destructive">{clientError}</p>}
           <p className="text-sm text-muted-foreground">
             {limits.remainingOperations === null
@@ -156,8 +178,8 @@ function ToolDialog({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={!!clientError || create.isPending}>
-            {create.isPending && <LoaderCircle className="animate-spin" />} Iniciar
+          <Button onClick={submit} disabled={!!clientError || !nameReady || create.isPending}>
+            {create.isPending && <LoaderCircle className="animate-spin" />} {tool.submitLabel ?? "Iniciar"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -12,22 +12,22 @@ description: "Task list: filtros visuais e ajustes de cor"
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Criar `Tools/video_filter/Dockerfile` e `requirements.txt` com `Pillow` na mesma versão
+- [X] T001 [P] Criar `Tools/video_filter/Dockerfile` e `requirements.txt` com `Pillow` na mesma versão
   de `Tools/brightness/requirements.txt` e `numpy` só em `requirements-dev.txt`. Requisito: COM-049.
-- [ ] T002 [P] Acrescentar ao `docker-compose.yaml` o `video_filter_worker` (1 réplica, D10).
-- [ ] T003 [P] Acrescentar `FILTER_STYLES` a `projects/config/video.js` (research F3).
+- [X] T002 [P] Acrescentar ao `docker-compose.yaml` o `video_filter_worker` (1 réplica, D10).
+- [X] T003 [P] Acrescentar `FILTER_STYLES` a `projects/config/video.js` (research F3).
 
 ## Phase 2: Foundational
 
-- [ ] T004 Criar `projects/video/tools/filter.js` com `validate`:
+- [X] T004 Criar `projects/video/tools/filter.js` com `validate`:
   - inteiros entre −100 e 100;
   - `style` e `tint` conhecidos;
   - regra `NO_CHANGE` (F5);
   - `dedupKey`.
   Registar `filter` em `VIDEO_TOOLS`. Requisitos: FLT-003, COM-008.
-- [ ] T005 `projects/routes/videos.js`: `GET /:user/:project/videos/:video/filter-options` (antes de
+- [X] T005 `projects/routes/videos.js`: `GET /:user/:project/videos/:video/filter-options` (antes de
   `/videos/:video`) e o *proxy* no gateway. Requisito: FLT-001.
-- [ ] T006 [P] Criar `projects/tests/filter.test.js`:
+- [X] T006 [P] Criar `projects/tests/filter.test.js`:
   - 150 → `400 fields.brightness`;
   - −101 → `400`;
   - 10,5 → `400`;
@@ -40,10 +40,10 @@ description: "Task list: filtros visuais e ajustes de cor"
 
 **Independent Test**: Cenário 1 do [quickstart.md](./quickstart.md).
 
-- [ ] T007 [US1] Criar `Tools/video_filter/adjust.py` com `apply(img, fb, fc, fs, tint)`, que aplica
+- [X] T007 [US1] Criar `Tools/video_filter/adjust.py` com `apply(img, fb, fc, fs, tint)`, que aplica
   `ImageEnhance.Brightness`, `ImageEnhance.Contrast`, `ImageEnhance.Color` e a matriz de tonalidade
   por esta ordem, saltando os fatores iguais a 1. Requisitos: FLT-006, FLT-007.
-- [ ] T008 [US1] Criar `Tools/video_filter/video_filter.py`, com um *handler* que:
+- [X] T008 [US1] Criar `Tools/video_filter/video_filter.py`, com um *handler* que:
   - abre o descodificador (`rawvideo rgb24`, `-vsync cfr -r fps`) e o codificador (`rawvideo` → `libx264`,
     `-i in.mp4 -map 1:a:0? -c:a copy`);
   - lê `w*h*3` bytes por fotograma, aplica `apply` e escreve;
@@ -52,16 +52,16 @@ description: "Task list: filtros visuais e ajustes de cor"
     `ffprobe -count_frames`, áudio);
   - em cancelamento ou *timeout*, mata os dois processos.
   Requisitos: FLT-006, COM-027, COM-028.
-- [ ] T009 [P] [US1] Criar `Tools/video_filter/tests/test_filter.py`:
+- [X] T009 [P] [US1] Criar `Tools/video_filter/tests/test_filter.py`:
   - um vídeo `lavfi` de 10 s a 30 fps → 300 fotogramas, mesma resolução, 30 fps;
   - FLT-007: extrair 10 fotogramas da origem (`ffmpeg -ss t -frames:v 1 png`), aplicar as funções de
     `Tools/brightness`, `contrast` e `saturation`, importadas ou chamadas com o mesmo
     `ImageEnhance`, e comparar com os fotogramas do resultado nos mesmos instantes → PSNR ≥ 35 dB;
   - áudio: `ffprobe` com `start_time` do áudio e do vídeo → diferença ≤ 40 ms.
   Requisitos: FLT-006, FLT-007, COM-028.
-- [ ] T010 [P] [US1] Criar `frontend/lib/video-filters.ts`: `toFactor(v) = 1 + v/100` e
+- [X] T010 [P] [US1] Criar `frontend/lib/video-filters.ts`: `toFactor(v) = 1 + v/100` e
   `cssFilter({brightness, contrast, saturation, tint})` (research F4).
-- [ ] T011 [US1] Criar `frontend/components/video-tools/filter-panel.tsx`:
+- [X] T011 [US1] Criar `frontend/components/video-tools/filter-panel.tsx`:
   - o leitor (`video-player` do 000) com o `style.filter` de `cssFilter`;
   - os botões dos três estilos (de `filter-options`), que preenchem os valores e a tonalidade
     (FLT-002);
@@ -69,13 +69,13 @@ description: "Task list: filtros visuais e ajustes de cor"
   - `output-name-field` e `request-summary` (estilo, valores, tonalidade, MP4 e operações restantes);
   - o botão “Aplicar filtros”, que chama `useCreateVideoTask({tool: "filter"})`.
   Requisitos: FLT-001, FLT-002, FLT-005, COM-023.
-- [ ] T012 [US1] `video-tool-menu.tsx`: entrada “Filtros” (ícone `SlidersHorizontal`).
+- [X] T012 [US1] `video-tool-menu.tsx`: entrada “Filtros” (ícone `SlidersHorizontal`).
 
 ## Phase 4: User Story 2 — Ajustar, validar e repor (P1)
 
 **Independent Test**: Cenário 2 do quickstart.
 
-- [ ] T013 [US2] Em `filter-panel.tsx`:
+- [X] T013 [US2] Em `filter-panel.tsx`:
   - um valor escrito fora do intervalo marca o campo em erro com “Entre −100 e +100” e desativa o
     botão (FLT-003);
   - mexer num *slider* depois de um estilo passa o estilo a “Personalizado” e mantém a tonalidade
