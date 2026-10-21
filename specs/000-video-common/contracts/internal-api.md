@@ -29,9 +29,10 @@ Base: `http://img_storage:11000` (`img_storage_ms` em `projects/utils/imageStora
 
 | Rota | Uso |
 |---|---|
-| `POST /video/:userId/:projectId/:stage` (novo; *multipart* `file`, `diskStorage`) | Carregar original (`video_src`), resultado (`video_out`) ou temporário (`video_tmp`). Resposta `201 {"key": "<projectId>/<stage>/<uuid>.<ext>"}` |
+| `POST /video/:userId/:projectId/:stage` (novo; *multipart* `file`, `diskStorage`) | Carregar original (`video_src`), resultado (`video_out`), temporário (`video_tmp`) ou *thumbnail* (`video_thumb`, só `image/jpeg`, D16). Resposta `201 {"key": "<projectId>/<stage>/<uuid>.<ext>"}` |
 | `GET /image/internal/:userId/:projectId/:stage/:name?expires=<s>` (existente; novo parâmetro `expires`) | URL interno pré-assinado para os *workers* descarregarem |
 | `GET /image/public/:userId/:projectId/:stage/:name?expires=900&download=<nome>` (existente; novos parâmetros) | URL para o navegador através de `/s3/` |
 | `DELETE /delete/:userId/:projectId/:stage/:name` (existente) | Remover objeto |
 
-`utils/stages.js` passa a incluir `video_src`, `video_out` e `video_tmp`.
+`utils/stages.js` passa a incluir `video_src`, `video_out`, `video_tmp` e `video_thumb`. A rota
+`POST /video/...` aceita `image/jpeg` (extensão `jpg`) apenas no estágio `video_thumb`.

@@ -12,6 +12,8 @@ src() { echo "-f lavfi -i testsrc2=size=$1:rate=${3:-30} -f lavfi -i sine=freque
 $FF $(src 1280x720 30) -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -c:a aac -shortest -movflags +faststart ok_720p_30s.mp4
 $FF $(src 1920x1080 60) -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -c:a aac -shortest -movflags +faststart ok_1080p_60s.mp4
 $FF -f lavfi -i testsrc2=size=640x360:rate=30 -t 5 -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p noaudio.mp4
+# 0,5 s: thumbnail de um vídeo mais curto do que 1 s (spec 001, T035)
+$FF -f lavfi -i testsrc2=size=640x360:rate=30 -t 0.5 -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p short_0_5s.mp4
 $FF $(src 640x360 5) -c:v libx265 -preset ultrafast -pix_fmt yuv420p -c:a aac -shortest -tag:v hvc1 hevc.mp4
 $FF $(src 640x360 5) -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -c:a aac -shortest -f mov mov.mov
 $FF $(src 640x360 5) -c:v libvpx-vp9 -deadline realtime -cpu-used 8 -c:a libopus -shortest webm.webm

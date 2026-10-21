@@ -11,6 +11,8 @@ const videoAssetSchema = new mongoose.Schema(
     origin: { type: String, enum: ["upload", "task"], required: true },
     name: { type: String, required: true },
     storage_key: { type: String, required: true },
+    // Thumbnail JPEG em video_thumb; null nas deteções e quando a geração falhou (D16, REQ-VID-COM-057)
+    thumbnail_key: { type: String, default: null },
     size_bytes: { type: Number, required: true, min: 1 },
     sha256: { type: String, required: true },
     container: { type: String, enum: ["mp4", "webm", "json"], required: true },

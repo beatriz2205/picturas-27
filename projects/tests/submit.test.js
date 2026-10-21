@@ -26,6 +26,7 @@ const types = { [FREE]: "free", [PREMIUM]: "premium", [ANON]: "anonymous", [OTHE
 
 let usersCalls = [];
 let onStore = null; // gancho para simular a remoção do projeto durante o envio
+let failThumbUpload = false; // simula o armazenamento a recusar a thumbnail (SUBMIT-013)
 
 // Simula o serviço users (GET /:user/type/) e regista as chamadas (SUBMIT-010: a quota não é tocada)
 const usersStub = http.createServer((req, res) => {
@@ -50,7 +51,11 @@ const storageStub = http.createServer(async (req, res) => {
     const boundary = "--" + req.headers["content-type"].split("boundary=")[1];
     const start = body.indexOf("\r\n\r\n") + 4;
     const end = body.lastIndexOf("\r\n" + boundary);
-    const key = `${m[2]}/${m[3]}/${crypto.randomUUID()}.mp4`;
+    if (m[3] === "video_thumb" && failThumbUpload) {
+      res.statusCode = 500;
+      return res.end("{}");
+    }
+    const key = `${m[2]}/${m[3]}/${crypto.randomUUID()}.${m[3] === "video_thumb" ? "jpg" : "mp4"}`;
     fs.mkdirSync(path.join(STORE, m[1], m[2], m[3]), { recursive: true });
     fs.writeFileSync(path.join(STORE, m[1], key), body.subarray(start, end));
     if (onStore) await onStore();
@@ -107,6 +112,7 @@ test.beforeEach(async () => {
   if (skip) return;
   usersCalls = [];
   onStore = null;
+  failThumbUpload = false;
   await mongoose.connection.db.collection("projects").deleteMany({});
   await VideoAsset.deleteMany({});
 });
@@ -313,6 +319,7 @@ test("listar, obter URL temporário e remover (COM-002, COM-030, COM-034, COM-05
   assert.strictEqual(del.status, 204);
   assert.strictEqual(await VideoAsset.countDocuments(), 0);
   assert.ok(!fs.existsSync(path.join(STORE, FREE, asset.storage_key)));
+  assert.ok(asset.thumbnail_key && !fs.existsSync(path.join(STORE, FREE, asset.thumbnail_key)), "a thumbnail também é apagada (COM-034)");
 
   const limits = await (await fetch(`${base}/${FREE}/video-limits`, { headers: h })).json();
   assert.strictEqual(limits.limits.maxBytes, 100 * 1024 * 1024);
@@ -327,4 +334,70 @@ test("vários vídeos sem upload_id no mesmo projeto não colidem no índice ún
   await VideoAsset.create({ ...base, name: "a.mp4", storage_key: `${p._id}/video_out/a.mp4` });
   await VideoAsset.create({ ...base, name: "b.mp4", storage_key: `${p._id}/video_out/b.mp4` });
   assert.strictEqual(await VideoAsset.countDocuments({ project_id: p._id }), 2);
+});
+
+// Phase 8 (T035): thumbnails na submissão (SUBMIT-011 a 013, COM-057; D16)
+const { execFileSync } = require("child_process");
+const dims = (file) =>
+  execFileSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", file])
+    .toString()
+    .trim();
+const thumbsIn = (projectId) => {
+  const dir = path.join(STORE, FREE, String(projectId), "video_thumb");
+  return fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+};
+
+test("thumbnail: a submissão gera um JPEG de 320 px com a proporção do vídeo (SUBMIT-012)", { skip }, async () => {
+  const p = await newProject();
+  const r = await upload(`/${FREE}/${p._id}/videos`, { file: "ok_720p_30s.mp4", caller: FREE });
+  assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+  assert.match(r.body.thumbnailUrl, /\/video_thumb\/[^/]+\.jpg\?exp=900$/);
+  const asset = await VideoAsset.findById(r.body.id);
+  assert.strictEqual(dims(path.join(STORE, FREE, asset.thumbnail_key)), "320,180");
+  assert.strictEqual(asset.sha256, sha("ok_720p_30s.mp4"), "o original não é alterado");
+  assert.deepStrictEqual(tmpFiles(), [], "o JPEG temporário é apagado");
+
+  const v = await upload(`/${FREE}/${p._id}/videos`, { file: "vertical_1080x1920.mp4", caller: FREE });
+  assert.strictEqual(v.status, 201, JSON.stringify(v.body));
+  const vertical = await VideoAsset.findById(v.body.id);
+  assert.strictEqual(dims(path.join(STORE, FREE, vertical.thumbnail_key)), "320,568");
+});
+
+test("thumbnail: a repetição do envio devolve a mesma thumbnail, sem gerar outra (SUBMIT-009)", { skip }, async () => {
+  const p = await newProject();
+  const uploadId = crypto.randomUUID();
+  const first = await upload(`/${FREE}/${p._id}/videos`, { file: "noaudio.mp4", caller: FREE, uploadId });
+  const again = await upload(`/${FREE}/${p._id}/videos`, { file: "noaudio.mp4", caller: FREE, uploadId });
+  assert.strictEqual(again.status, 200);
+  assert.strictEqual(again.body.id, first.body.id);
+  assert.ok(again.body.thumbnailUrl);
+  assert.strictEqual(thumbsIn(p._id).length, 1);
+});
+
+test("thumbnail: uma falha não recusa o vídeo (SUBMIT-013)", { skip }, async () => {
+  failThumbUpload = true;
+  const p = await newProject();
+  const r = await upload(`/${FREE}/${p._id}/videos`, { file: "ok_720p_30s.mp4", caller: FREE });
+  assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+  assert.strictEqual(r.body.thumbnailUrl, null);
+  const asset = await VideoAsset.findById(r.body.id);
+  assert.strictEqual(asset.thumbnail_key, null);
+  assert.strictEqual(asset.sha256, sha("ok_720p_30s.mp4"));
+  assert.deepStrictEqual(tmpFiles(), []);
+});
+
+test("thumbnail: projeto removido durante o envio não deixa a thumbnail no armazenamento (E5)", { skip }, async () => {
+  const p = await newProject();
+  onStore = async () => {
+    await mongoose.connection.db.collection("projects").deleteOne({ _id: p._id });
+  };
+  const r = await upload(`/${FREE}/${p._id}/videos`, { file: "noaudio.mp4", caller: FREE });
+  assert.strictEqual(r.status, 410);
+  assert.deepStrictEqual(thumbsIn(p._id), []);
+});
+
+test("thumbnail: projeto criado a partir de um vídeo também tem thumbnail (SUBMIT-002, SUBMIT-012)", { skip }, async () => {
+  const ok = await upload(`/${FREE}/video-project`, { file: "noaudio.mp4", caller: FREE, fields: { name: "Com thumb" } });
+  assert.strictEqual(ok.status, 201, JSON.stringify(ok.body));
+  assert.match(ok.body.video.thumbnailUrl, /\/video_thumb\//);
 });

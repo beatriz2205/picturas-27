@@ -66,6 +66,16 @@ function makeFakes() {
     internalUrl: async (owner, key) => `http://seaweedfs/${owner}/${key}`,
     remove: async (owner, key) => f.removed.push(key),
   };
+  // thumbnails dos resultados (D16): regista a entrada e devolve uma chave previsível
+  f.thumbInputs = [];
+  f.thumbFails = false;
+  f.thumbnails = {
+    storeThumbnail: async (owner, project, input) => {
+      f.thumbInputs.push(input);
+      if (f.thumbFails) return null;
+      return `${project}/video_thumb/${input.split("/").pop()}.jpg`;
+    },
+  };
   return f;
 }
 
@@ -141,11 +151,34 @@ test.describe("taskService", { skip }, () => {
     await VideoTask.deleteMany({});
     await VideoAsset.deleteMany({});
     fake = makeFakes();
-    tasks._setDeps({ broker: fake.broker, quota: fake.quota, storage: fake.storage });
+    tasks._setDeps({ broker: fake.broker, quota: fake.quota, storage: fake.storage, thumbnails: fake.thumbnails });
   });
 
   test.after(async () => {
     await mongoose.disconnect();
+  });
+
+  test("conclusão: resultados de vídeo com thumbnail; deteções sem (COM-057, D16)", async () => {
+    const video = await makeVideo();
+    const t = await tasks.accept(ctx(FREE, video));
+    const vid = output();
+    const det = output({ kind: "detections", container: "json", key: `${PROJECT}/video_out/${new mongoose.Types.ObjectId()}.json` });
+    await tasks.complete(t._id, [vid, det]);
+    const assets = await VideoAsset.find({ source_task_id: t._id }).sort({ kind: -1 });
+    const byKind = Object.fromEntries(assets.map((a) => [a.kind, a]));
+    assert.strictEqual(byKind.video.thumbnail_key, `${PROJECT}/video_thumb/${vid.key.split("/").pop()}.jpg`);
+    assert.strictEqual(byKind.detections.thumbnail_key, null);
+    assert.deepStrictEqual(fake.thumbInputs, [`http://seaweedfs/${OWNER}/${vid.key}`]);
+  });
+
+  test("conclusão: uma falha na thumbnail não muda o estado da tarefa (SUBMIT-013, COM-057)", async () => {
+    fake.thumbFails = true;
+    const video = await makeVideo();
+    const t = await tasks.accept(ctx(FREE, video));
+    const done = await tasks.complete(t._id, [output()]);
+    assert.strictEqual(done.status, "completed");
+    const asset = await VideoAsset.findOne({ source_task_id: t._id });
+    assert.strictEqual(asset.thumbnail_key, null);
   });
 
   test("aceitação: tarefa em fila, operação reservada, mensagem com prioridade (COM-011, COM-019)", async () => {

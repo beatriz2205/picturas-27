@@ -61,7 +61,7 @@ resultados, mais recentes primeiro; os filtros são opcionais).
 URL pré-assinado de 15 min através do *proxy* `/s3/`; com `download=1`, inclui
 `ResponseContentDisposition=attachment; filename="<name>"` (`COM-030`, `COM-050`).
 
-`DELETE /projects/:user/:project/videos/:video` → `204`. Apaga o objeto no armazenamento e cancela as
+`DELETE /projects/:user/:project/videos/:video` → `204`. Apaga o objeto e a *thumbnail* no armazenamento e cancela as
 tarefas ativas com esta origem (`COM-017`, `COM-034`). Exige permissão de edição.
 
 ```json
@@ -70,10 +70,15 @@ tarefas ativas com esta origem (`COM-017`, `COM-034`). Exige permissão de ediç
   "sizeBytes": 10485760, "durationS": 30.0, "width": 1280, "height": 720, "fps": 30,
   "container": "mp4", "videoCodec": "h264", "audioCodec": "aac",
   "acceptedAsInput": true, "sourceVideoId": "670f…", "sourceTaskId": "6711…",
+  "thumbnailUrl": "https://…/s3/user-…/670e…/video_thumb/….jpg?X-Amz-…",
   "createdAt": "2026-10-19T10:00:00Z" }
 ```
 
-A chave de armazenamento nunca é devolvida.
+As chaves de armazenamento nunca são devolvidas. `thumbnailUrl` é um URL pré-assinado de 15 min
+(D13, D16), gerado em cada resposta de `GET .../videos`, `GET .../videos/:video` e da submissão; é
+`null` quando o vídeo não tem *thumbnail* (resultados de deteção e falhas de geração). Nos resultados
+de deteção, o cliente usa a `thumbnailUrl` do vídeo de origem (`COM-057`). O cliente volta a pedir a
+lista quando o URL expira.
 
 ## Tarefas
 

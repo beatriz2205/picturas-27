@@ -8,7 +8,9 @@ Rota de carregamento de vídeo em *stream* (Nginx, gateway, `projects`, `imageSt
 - recusa por tamanho antes da transferência;
 - validação por conteúdo com `ffprobe`;
 - idempotência por `X-Upload-Id`;
-- criação de projeto a partir de um vídeo.
+- criação de projeto a partir de um vídeo;
+- *thumbnail* JPEG gerada com `ffmpeg` no `projects` e guardada em `video_thumb` (Phase 8; S6 e D16
+  do 000).
 
 No frontend: diálogo “Adicionar vídeo” com progresso e cancelamento, e opção de vídeo no diálogo de
 novo projeto. Depende da Phase 2 do 000 (modelos, `probe`, `limits`, `storage`).
@@ -28,7 +30,8 @@ novo projeto. Depende da Phase 2 do 000 (modelos, `probe`, `limits`, `storage`).
 
 **Target Platform**: Docker Compose, Nginx HTTPS
 
-**Performance Goals**: validação ≤ 5 s para 500 MB após a receção (COM-036); memória do gateway e do
+**Performance Goals**: validação e geração da *thumbnail* ≤ 5 s para 500 MB após a receção
+(SUBMIT-011); memória do gateway e do
 `projects` independente do tamanho do ficheiro
 
 **Constraints**: 500 MB máx. (Premium); nenhuma entrada parcial; não alterar `addProjectImages` nem a

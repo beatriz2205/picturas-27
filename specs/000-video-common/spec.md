@@ -25,6 +25,15 @@ notificações, resultados, limpeza, retenção e qualidade.
 - Não há repetição automática de tarefas: uma mensagem reentregue a um *worker* depois de uma queda
   termina a tarefa em `failed` (RNG-06).
 
+### Session 2026-10-21
+
+- Cada vídeo e cada resultado de vídeo tem uma *thumbnail* (JPEG, 320 px de largura, fotograma a 10%
+  da duração, no máximo a 1 s), gerada pelo `projects` com `ffmpeg` (D16). Os resultados de deteção
+  não têm *thumbnail* própria: a interface usa a do vídeo de origem. Sem *thumbnail*, a interface
+  mostra um ícone genérico (COM-057, UC-VID-001/RN8).
+- A *thumbnail* nunca é motivo de falha: se não for gerada, o vídeo ou o resultado é publicado na
+  mesma, com `thumbnail_key: null` (UC-VID-001/E6).
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Acesso e validação de vídeos por perfil (Priority: P1)
@@ -195,12 +204,15 @@ armazenamento.
    processado, **Then** há 2 resultados de imagem, o vídeo não muda e não há erro (COM-032, COM-046).
 4. **Given** um projeto com imagens e vídeos, **When** é descarregado em ZIP, **Then** inclui os
    vídeos; **When** em PDF, **Then** só tem imagens e é mostrado um aviso (COM-033).
-5. **Given** um vídeo removido do projeto, **When** se consulta o armazenamento, **Then** o ficheiro já
-   não existe e o URL devolve erro (COM-034).
+5. **Given** um vídeo removido do projeto, **When** se consulta o armazenamento, **Then** o ficheiro e
+   a *thumbnail* já não existem e os URLs devolvem erro (COM-034).
 6. **Given** um utilizador com 2 vídeos e 1 tarefa, **When** elimina a conta, **Then** não resta
    nenhum desses ficheiros ou registos (COM-035).
-7. **Given** outro utilizador ou um URL expirado (15 min), **When** tenta aceder a um vídeo ou
-   resultado, **Then** o acesso é recusado (COM-050).
+7. **Given** outro utilizador ou um URL expirado (15 min), **When** tenta aceder a um vídeo, a uma
+   *thumbnail* ou a um resultado, **Then** o acesso é recusado (COM-050).
+8. **Given** um projeto com um vídeo submetido, um resultado de recorte e um resultado de deteção,
+   **When** o utilizador abre o projeto, **Then** cada cartão tem uma *thumbnail* e a do resultado de
+   deteção é a do vídeo de origem; um vídeo sem *thumbnail* mostra o ícone genérico (COM-057).
 
 ---
 
@@ -297,8 +309,11 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-031**: Apresentar tarefas e resultados depois de fechar e reabrir a aplicação.
 - **COM-032**: Excluir os vídeos da cadeia de ferramentas de imagem (ALT `UC04`, `RF15`).
 - **COM-033**: Incluir vídeos no ZIP do projeto e excluí-los do PDF com aviso (ALT `RF13`).
-- **COM-034**: Eliminar do armazenamento o vídeo ou resultado removido, ou todos os do projeto removido.
+- **COM-034**: Eliminar do armazenamento o vídeo ou resultado removido, incluindo a *thumbnail*, ou
+  todos os do projeto removido.
 - **COM-035**: Eliminar vídeos, resultados e registos de tarefas na eliminação da conta (ALT `RF23`).
+- **COM-057**: Apresentar cada vídeo e resultado com *thumbnail*: a própria, a do vídeo de origem nos
+  resultados de deteção, ou um ícone genérico quando não existe (ALT `UC04`).
 
 ### Non-Functional Requirements
 
@@ -320,14 +335,15 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-048**: Registo por tarefa com ferramenta, duração do vídeo, tempo de fila, tempo de
   processamento e estado final.
 - **COM-049**: *Workers* de vídeo em contentores reproduzíveis a partir da documentação.
-- **COM-050**: Acesso restrito a autorizados; IDs e URLs não adivinháveis; URLs válidos 15 min.
+- **COM-050**: Acesso restrito a autorizados (vídeos, *thumbnails*, tarefas e resultados); IDs e URLs
+  não adivinháveis; URLs válidos 15 min.
 - **COM-051**: Pedidos simultâneos não ultrapassam a quota nem o limite de tarefas ativas.
 - **COM-052**: Estados, erros, quota e progresso compreensíveis; progresso a cada ≤ 5 s.
 
 ### Key Entities
 
 - **Vídeo** (`videoAsset`): ficheiro de vídeo de um projeto, original ou resultado, com metadados
-  técnicos, chave de armazenamento, *hash*, e, se for resultado, referência ao vídeo de origem e à
+  técnicos, chave de armazenamento, chave da *thumbnail*, *hash*, e, se for resultado, referência ao vídeo de origem e à
   tarefa. Inclui também o resultado de deteção (JSON).
 - **Tarefa de processamento** (`videoTask`): pedido de uma ferramenta de vídeo sobre um vídeo, com
   parâmetros, estado, progresso, motivo, tempos, estado da quota e prioridade.
@@ -377,5 +393,5 @@ quota total de armazenamento, retoma de tarefas, *presets* de vídeo.
 | COM-018, COM-019, COM-021 a COM-024, COM-051 | US3 |
 | COM-016, COM-017, COM-020, COM-040 a COM-042 | US4 |
 | COM-015, COM-031 | US5 |
-| COM-002, COM-030, COM-032 a COM-035, COM-044, COM-046 | US6 |
+| COM-002, COM-030, COM-032 a COM-035, COM-044, COM-046, COM-057 | US6 |
 | COM-037, COM-038, COM-043, COM-047 a COM-049 | US7 |

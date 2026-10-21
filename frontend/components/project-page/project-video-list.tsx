@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Download, FileJson, Film, LoaderCircle, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import {
 import { useSession } from "@/providers/session-provider";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/error-messages";
-import { useProjectVideos, useVideoTasks, useVideoUrl } from "@/lib/queries/videos";
+import { useProjectVideos, useVideoTasks, useVideoUrl, videosKey } from "@/lib/queries/videos";
 import { useDeleteVideo } from "@/lib/mutations/videos";
 import { toolLabel } from "@/lib/video-tools";
 import { fetchVideoUrl, formatCodecs, formatDuration, formatSize, ProjectVideo } from "@/lib/videos";
@@ -34,7 +35,7 @@ interface Props {
   view: "grid" | "carousel";
 }
 
-// Vídeos do projeto com miniatura e metadados (REQ-VID-COM-002, COM-030; UC-VID-001 passo 6)
+// Vídeos do projeto com thumbnail e metadados (REQ-VID-COM-002, COM-030; UC-VID-001 passo 6)
 export function ProjectVideoList({ pid, ownerId, shareId, canEdit, mode, view }: Props) {
   const session = useSession();
   const access = { uid: session.user._id, pid, token: session.token, ownerId, shareId };
@@ -129,27 +130,8 @@ export function ProjectVideoList({ pid, ownerId, shareId, canEdit, mode, view }:
   );
 }
 
-// Só pede o URL quando o cartão fica visível
-function useInView<T extends Element>() {
-  const ref = useRef<T>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || inView) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setInView(true);
-      },
-      { rootMargin: "200px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [inView]);
-  return { ref, inView };
-}
-
-// Miniatura: a do servidor quando existir; senão um fotograma do próprio vídeo (as deteções usam a
-// origem). Sem vídeo disponível, um ícone.
+// Thumbnail gerada no servidor; as deteções usam a do vídeo de origem. Sem thumbnail, um ícone
+// (REQ-VID-COM-057; specs/000-video-common/research.md, D16).
 function VideoThumbnail({
   video,
   source,
@@ -159,32 +141,35 @@ function VideoThumbnail({
   source: ProjectVideo | null;
   access: VideoAccess;
 }) {
+  const qc = useQueryClient();
   const target = video.kind === "detections" ? source : video;
-  const { ref, inView } = useInView<HTMLDivElement>();
-  const url = useVideoUrl(access, inView && target && !target.thumbnailUrl ? target.id : "");
-  const [failed, setFailed] = useState(false);
-  const at = Math.min(1, (target?.durationS ?? 0) * 0.1);
+  const src = target?.thumbnailUrl ?? null;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const refreshed = useRef(false);
+
+  // O URL é válido 15 min: se falhar, pede a lista de novo (uma vez), que traz URLs novos
+  const handleError = () => {
+    setFailedSrc(src);
+    if (!refreshed.current) {
+      refreshed.current = true;
+      qc.invalidateQueries({ queryKey: videosKey(access.pid) });
+    }
+  };
 
   return (
-    <div ref={ref} className="relative aspect-video overflow-hidden bg-muted">
+    <div className="relative aspect-video overflow-hidden bg-muted">
       <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
         {video.kind === "detections" ? <FileJson className="size-8" /> : <Film className="size-8" />}
       </div>
-      {target?.thumbnailUrl ? (
+      {src && src !== failedSrc && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={target.thumbnailUrl} alt="" className="absolute inset-0 size-full object-cover" />
-      ) : (
-        url.data &&
-        !failed && (
-          <video
-            src={`${url.data.url}#t=${at}`}
-            preload="metadata"
-            muted
-            playsInline
-            className="absolute inset-0 size-full object-cover"
-            onError={() => setFailed(true)}
-          />
-        )
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 size-full object-cover"
+          onError={handleError}
+        />
       )}
       {video.kind === "detections" ? (
         <span className="absolute left-2 top-2 rounded bg-background/85 px-1.5 py-0.5 text-xs font-medium">

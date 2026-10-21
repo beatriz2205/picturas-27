@@ -6,7 +6,7 @@
 
 **Status**: Ready for implementation
 
-**Input**: UC-VID-001 (Cap. 4.1) e requisitos `REQ-VID-SUBMIT-001` a `010` (Cap. 5) do relatório da
+**Input**: UC-VID-001 (Cap. 4.1) e requisitos `REQ-VID-SUBMIT-001` a `013` (Cap. 5) do relatório da
 Fase 1. Usa a infraestrutura de [000-video-common](../000-video-common/spec.md): validação, limites,
 modelo `videoAsset` e armazenamento.
 
@@ -20,13 +20,23 @@ modelo `videoAsset` e armazenamento.
 - A repetição de uma submissão cuja confirmação se perdeu reutiliza o mesmo identificador de envio e
   não cria uma segunda entrada. Uma nova seleção do mesmo ficheiro é uma nova submissão (RN6).
 
+### Session 2026-10-21
+
+- A submissão gera uma *thumbnail* do vídeo (UC-VID-001/RN8): JPEG com 320 px de largura, fotograma a
+  10% da duração (no máximo a 1 s). É gerada pelo servidor, de forma síncrona, entre a validação e a
+  confirmação; não cria tarefa nem conta como operação (decisão D16 do 000).
+- Se a *thumbnail* não puder ser gerada, o vídeo é aceite na mesma e aparece com o ícone genérico
+  (UC-VID-001/E6).
+- O tempo de confirmação de `SUBMIT-011` (≤ 5 s após o fim da transferência) inclui a geração da
+  *thumbnail*.
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Submeter um vídeo a um projeto existente (Priority: P1)
 
 O utilizador abre um projeto, escolhe “Adicionar vídeo”, seleciona um ficheiro, vê o nome e o tamanho,
-confirma e acompanha o progresso do envio. No fim, o vídeo aparece no projeto com nome, duração,
-resolução, tamanho e formato.
+confirma e acompanha o progresso do envio. No fim, o vídeo aparece no projeto com a sua *thumbnail*,
+nome, duração, resolução, tamanho e formato.
 
 **Why this priority**: É a entrada de todas as ferramentas de vídeo (UC-VID-002 a 005).
 
@@ -45,6 +55,13 @@ e 720p e verificar a entrada no projeto, os metadados e o objeto no armazenament
    projeto tem os dois (SUBMIT-007).
 5. **Given** um utilizador Free sem operações restantes, **When** submete um vídeo válido, **Then** a
    submissão é aceite e o contador não muda (SUBMIT-010).
+6. **Given** um vídeo válido de 30 s, **When** a submissão é confirmada, **Then** o cartão mostra uma
+   *thumbnail* JPEG com 320 px de largura e a proporção do vídeo, e o original tem o mesmo `sha256`
+   que o ficheiro enviado (SUBMIT-012).
+7. **Given** a geração da *thumbnail* forçada a falhar, **When** o utilizador submete um vídeo válido,
+   **Then** o vídeo é associado ao projeto (`201`) e o cartão mostra o ícone genérico (SUBMIT-013).
+8. **Given** um vídeo de 500 MB, **When** a transferência termina, **Then** a confirmação, com a
+   *thumbnail*, chega em ≤ 5 s (SUBMIT-011).
 
 ---
 
@@ -121,6 +138,11 @@ lista de projetos.
 - Sessão expirada durante um envio longo: o servidor recusa no fim com `401` e descarta o ficheiro;
   o utilizador pode repetir depois de voltar a entrar.
 - Vídeo com mais de uma faixa de vídeo ou áudio: é recusado como formato não suportado.
+- Vídeo com menos de 1 s: a *thumbnail* é o fotograma a 10% da duração.
+- Vídeo vertical (1080 × 1920): a *thumbnail* tem 320 px de largura e mantém a proporção (320 × 568).
+- Repetição de um envio já confirmado (`200`): devolve o vídeo existente com a *thumbnail* já gerada,
+  sem gerar outra.
+- Projeto removido depois de gerar a *thumbnail* (E5): a *thumbnail* é apagada com o vídeo.
 
 ## Requirements
 
@@ -139,14 +161,23 @@ lista de projetos.
 - **SUBMIT-008**: Permitir repetir a submissão após uma falha.
 - **SUBMIT-009**: Repetir uma submissão já confirmada mantém uma só entrada.
 - **SUBMIT-010**: A submissão não altera o saldo de operações.
+- **SUBMIT-012**: Gerar, durante a submissão, uma *thumbnail* JPEG de 320 px de largura a partir do
+  fotograma a 10% da duração (no máximo a 1 s) e associá-la ao vídeo, sem alterar o original.
+- **SUBMIT-013**: Aceitar a submissão de um vídeo válido mesmo quando a *thumbnail* não é gerada.
 
-Requisitos comuns usados (implementados no 000): COM-001 a COM-007, COM-029, COM-034, COM-036 (≤ 5 s
-para validar 500 MB), COM-038 (envios falhados ≤ 24 h), COM-045, COM-050.
+### Non-Functional Requirements
+
+- **SUBMIT-011**: Confirmar ou rejeitar a submissão de um vídeo de até 500 MB, incluindo a geração da
+  *thumbnail*, em ≤ 5 s após o fim da transferência, no ambiente de referência (separado de COM-036 no
+  refinamento do relatório).
+
+Requisitos comuns usados (implementados no 000): COM-001 a COM-007, COM-029, COM-034 (inclui a
+*thumbnail*), COM-038 (envios falhados ≤ 24 h), COM-045, COM-050, COM-057.
 
 ### Key Entities
 
 - **Vídeo** (`videoAsset` com `origin: "upload"`): ver o data-model do 000. Esta funcionalidade usa
-  `upload_id` para a idempotência.
+  `upload_id` para a idempotência e preenche `thumbnail_key`.
 
 ## Success Criteria
 
@@ -156,8 +187,11 @@ para validar 500 MB), COM-038 (envios falhados ≤ 24 h), COM-045, COM-050.
   corpo recebidos no servidor).
 - **SC-002**: 100% dos ficheiros fora da matriz ou dos limites são recusados sem entrada no projeto.
 - **SC-003**: 0 entradas duplicadas em repetições com o mesmo identificador de envio.
-- **SC-004**: Validação de um vídeo de 500 MB em ≤ 5 s após a receção (COM-036).
+- **SC-004**: Validação e geração da *thumbnail* de um vídeo de 500 MB em ≤ 5 s após a receção
+  (SUBMIT-011).
 - **SC-005**: 0 ficheiros parciais acessíveis depois de cancelamentos e falhas de envio.
+- **SC-006**: 100% dos vídeos válidos submetidos têm *thumbnail* ou, se a geração falhar, são aceites na
+  mesma (0 submissões recusadas por causa da *thumbnail*).
 
 ## Assumptions
 
@@ -167,12 +201,13 @@ para validar 500 MB), COM-038 (envios falhados ≤ 24 h), COM-045, COM-050.
 
 ## Scope and Traceability
 
-Fora do âmbito: pré-visualização no momento da submissão (Q4), envio de vários vídeos de uma vez,
-`.zip` de vídeos e retoma de envios interrompidos (*resumable upload*).
+Fora do âmbito: pré-visualização com reprodução durante a seleção do ficheiro (Q4; a *thumbnail* é
+gerada depois da validação), envio de vários vídeos de uma vez, `.zip` de vídeos e retoma de envios
+interrompidos (*resumable upload*).
 
 | Requisito | User Story |
 |---|---|
-| SUBMIT-001, SUBMIT-004, SUBMIT-006, SUBMIT-007, SUBMIT-010 | US1 |
+| SUBMIT-001, SUBMIT-004, SUBMIT-006, SUBMIT-007, SUBMIT-010 a SUBMIT-013 | US1 |
 | SUBMIT-003 (+ COM-001, COM-003 a COM-007) | US2 |
 | SUBMIT-005, SUBMIT-008, SUBMIT-009 | US3 |
 | SUBMIT-002 | US4 |

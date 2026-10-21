@@ -17,6 +17,7 @@ let deps = {
   broker: require("./broker"),
   quota: require("./quota"),
   storage: require("./storage"),
+  thumbnails: require("./thumbnail"),
 };
 
 function _setDeps(overrides) {
@@ -301,13 +302,32 @@ async function outputNameFor(task, out) {
   return uniqueName(VideoAsset, task.project_id, base);
 }
 
+// Thumbnail de um resultado de vídeo, lida do armazenamento por pedidos Range (D16; REQ-VID-COM-057).
+// Os resultados de deteção usam a da origem. Uma falha não muda o estado da tarefa.
+async function resultThumbnail(task, out) {
+  if (out.kind === "detections") return null;
+  try {
+    const url = await deps.storage.internalUrl(String(task.owner_id), out.key, { expiresS: 300 });
+    return await deps.thumbnails.storeThumbnail(task.owner_id, task.project_id, url, out.durationS, { storage: deps.storage });
+  } catch (_) {
+    return null;
+  }
+}
+
 // Cria os videoAsset dos resultados (upsert por _id: repetir não duplica)
 async function ensureAssets(task, outputs) {
   for (let i = 0; i < outputs.length; i++) {
     const id = task.result_asset_ids[i];
     if (await VideoAsset.exists({ _id: id })) continue;
     const name = await outputNameFor(task, outputs[i]);
-    await VideoAsset.updateOne({ _id: id }, { $setOnInsert: assetFromOutput(task, outputs[i], id, name) }, { upsert: true });
+    const thumbKey = await resultThumbnail(task, outputs[i]);
+    const r = await VideoAsset.updateOne(
+      { _id: id },
+      { $setOnInsert: { ...assetFromOutput(task, outputs[i], id, name), thumbnail_key: thumbKey } },
+      { upsert: true }
+    );
+    // Outra repetição do evento criou o resultado entretanto: esta thumbnail sobra
+    if (thumbKey && !r.upsertedCount) await removeKeys(task.owner_id, [thumbKey]);
   }
 }
 

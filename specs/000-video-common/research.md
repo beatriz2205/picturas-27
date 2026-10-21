@@ -260,3 +260,36 @@ pendente.
 
 **Rationale**: O repositório não tem testes nem *scripts* `test`. A Constituição (princípio III) exige
 validação reproduzível. `node --test` evita dependências novas no *runtime*.
+
+## D16. *Thumbnails* dos vídeos
+
+**Decision**:
+- O `projects` gera a *thumbnail* com `ffmpeg -ss <t> -i <entrada> -frames:v 1 -vf scale=320:-2 -q:v 4
+  <saída>.jpg`, com `t = min(1 s, 10% da duração)` (UC-VID-001/RN8). O `-ss` antes do `-i` faz a
+  procura pelo índice, sem descodificar o vídeo até `t`.
+- **Na submissão**, a entrada é o ficheiro temporário já validado (S3 do 001, entre a validação e a
+  criação do `videoAsset`). O tempo conta para os ≤ 5 s de `SUBMIT-011`.
+- **Nos resultados** (`origin: "task"`, `kind: "video"`), a entrada é o URL interno pré-assinado do
+  resultado (`storage.internalUrl`): o `ffmpeg` lê por pedidos `Range` só o que precisa, sem
+  descarregar o ficheiro. É gerada no `taskService` quando a tarefa passa a `completed`, antes de criar
+  o `videoAsset`. Os resultados `detections` não têm *thumbnail*.
+- A *thumbnail* é carregada no estágio `video_thumb` (`image/jpeg`) e a chave fica em
+  `videoAsset.thumbnail_key`. O `toVideoDTO` passa a ser assíncrono e devolve `thumbnailUrl`
+  pré-assinado de 15 min (D13).
+- Qualquer falha (`ffmpeg`, *timeout* de 5 s, armazenamento) é registada e deixa
+  `thumbnail_key: null`; nunca falha a submissão nem a tarefa (UC-VID-001/E6, `SUBMIT-013`).
+- A remoção de um vídeo, de um projeto ou de uma conta apaga também a *thumbnail* (`COM-034`,
+  `COM-035`). Os vídeos anteriores a esta decisão recebem a *thumbnail* por um *script* de
+  preenchimento (`projects/scripts/backfill-thumbnails.js`).
+
+**Rationale**: O `ffmpeg` já está na imagem do `projects` (D6), e extrair um fotograma demora uma
+fração de segundo. Gerar no `projects` em vez de nos *workers* evita alterar os cinco *workers* e o
+contrato de mensagens (`COM-047`): uma ferramenta nova recebe a *thumbnail* sem código próprio. Um
+URL pré-assinado no DTO permite usar `<img src>` sem cabeçalho de autenticação.
+
+**Alternatives considered**:
+- *Thumbnail* gerada no navegador a partir de um fotograma do vídeo: cada cartão descarrega parte do
+  vídeo, e o resultado depende do navegador. Fica só como solução transitória no frontend.
+- *Thumbnail* gerada por cada *worker*: obrigaria a alterar todos os *workers* e
+  `contracts/worker-messages.md`.
+- *Endpoint* `GET .../videos/:video/thumbnail`: o `<img>` não envia o *token* `Bearer`.

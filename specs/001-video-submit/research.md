@@ -34,13 +34,15 @@ deliberada repetida dá uma entrada, e uma nova escolha do mesmo ficheiro dá ou
    escrita.
 4. `probe` → `validateInput` → `validateProfile`; se falhar, apagar o ficheiro e responder com o erro.
 5. Carregar em `video_src` (`storage.uploadFile`).
-6. Verificar se o projeto ainda existe. Se não existir, apagar o objeto e responder
+6. Gerar a *thumbnail* a partir do ficheiro temporário e carregá-la em `video_thumb` (S6). Uma falha
+   deixa a *thumbnail* a `null` e não interrompe a submissão.
+7. Verificar se o projeto ainda existe. Se não existir, apagar os objetos e responder
    `410 PROJECT_REMOVED` (UC-VID-001/E5).
-7. Criar `videoAsset` (`origin: "upload"`, nome único no projeto).
-8. Apagar o ficheiro temporário e responder `201 VideoDTO` (`SUBMIT-006`).
+8. Criar `videoAsset` (`origin: "upload"`, nome único no projeto, `thumbnail_key`).
+9. Apagar os ficheiros temporários e responder `201 VideoDTO` com `thumbnailUrl` (`SUBMIT-006`).
 
-Se o cliente abortar (`req.on("aborted")`) ou ocorrer um erro antes do passo 7, o ficheiro
-temporário e o objeto eventualmente criado são apagados. O janitor do 000 apaga os restos com mais de
+Se o cliente abortar (`req.on("aborted")`) ou ocorrer um erro antes do passo 8, os ficheiros
+temporários e os objetos eventualmente criados (vídeo e *thumbnail*) são apagados. O janitor do 000 apaga os restos com mais de
 24 h (`COM-038`).
 
 ## S4. Criar um projeto com um vídeo
@@ -57,3 +59,22 @@ compensar depois deixaria o projeto visível durante a validação.
 O `new-project-dialog.tsx` (`frontend/components/dashboard-sidebar/new-project-dialog.tsx:102`) exige
 uma imagem. A vista do projeto e a cadeia de imagem têm de tolerar `imgs = []`: o `POST /process` já
 responde `400` sem ferramentas. A tarefa T017 confirma que a página do projeto não falha sem imagens.
+
+## S6. *Thumbnail* na submissão
+
+**Decision**: Novo módulo `projects/video/thumbnail.js` com
+`generateThumbnail(input, durationS) → caminho do JPEG | null`:
+- `t = min(1, durationS × 0,1)`;
+- `ffmpeg -v error -ss <t> -i <input> -frames:v 1 -vf scale=320:-2 -q:v 4 -y <tmp>.jpg`, com
+  *timeout* de 5 s;
+- devolve `null` (e regista a causa) se o `ffmpeg` falhar, exceder o tempo ou não produzir ficheiro.
+
+Na submissão, `input` é o ficheiro temporário (passo 6 de S3), e o JPEG é carregado com
+`storage.uploadFile(owner, project, "video_thumb", path, "image/jpeg")`. O mesmo módulo serve os
+resultados das ferramentas, com o URL interno do resultado como `input` (D16 do 000). O passo 6 é feito
+em paralelo com o passo 5 (`Promise.all`), para não somar o tempo de carregamento do vídeo ao da
+*thumbnail*.
+
+**Rationale**: `SUBMIT-012` e `SUBMIT-013`; o `ffmpeg` já está na imagem do `projects`. A procura com
+`-ss` antes de `-i` mantém a geração abaixo de 1 s mesmo para 500 MB, dentro dos 5 s de `SUBMIT-011`.
+O `scale=320:-2` mantém a proporção com altura par (vídeos verticais incluídos).

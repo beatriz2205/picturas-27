@@ -8,8 +8,10 @@ const allowedStages = require("../utils/stages");
 const router = express.Router();
 const upload = multer({ dest: process.env.VIDEO_TMP_DIR || os.tmpdir() });
 
-const videoStages = ["video_src", "video_out", "video_tmp"];
-const extByMime = { "video/mp4": "mp4", "video/webm": "webm", "application/json": "json" };
+const videoStages = ["video_src", "video_out", "video_tmp", "video_thumb"];
+const extByMime = { "video/mp4": "mp4", "video/webm": "webm", "application/json": "json", "image/jpeg": "jpg" };
+// Thumbnails só em video_thumb e só JPEG (specs/000-video-common/research.md, D16)
+const isAllowedType = (stage, mime) => (stage === "video_thumb") === (mime === "image/jpeg");
 
 router.post("/:userId/:projectId/:stage", upload.single("file"), async (req, res) => {
   const { userId, projectId, stage } = req.params;
@@ -17,12 +19,14 @@ router.post("/:userId/:projectId/:stage", upload.single("file"), async (req, res
 
   try {
     if (!allowedStages.includes(stage) || !videoStages.includes(stage)) {
-      return res.status(400).json({ error: "O estágio deve ser video_src, video_out ou video_tmp." });
+      return res.status(400).json({ error: "O estágio deve ser video_src, video_out, video_tmp ou video_thumb." });
     }
     if (!req.file) return res.status(400).json({ error: "Nenhum ficheiro recebido." });
 
     const ext = extByMime[req.file.mimetype];
-    if (!ext) return res.status(400).json({ error: "Tipo de ficheiro não suportado." });
+    if (!ext || !isAllowedType(stage, req.file.mimetype)) {
+      return res.status(400).json({ error: "Tipo de ficheiro não suportado." });
+    }
 
     const result = await uploadVideo(userId, projectId, stage, tmpPath, req.file.mimetype, ext);
     res.status(201).json(result);

@@ -1,7 +1,7 @@
 // Limpeza periódica (spec 000, D11, T056; RNG-06, REQ-VID-COM-038).
 // A cada 10 min:
 //  - apaga os objetos temporários (tmp_keys) de tarefas terminadas há mais de 1 h;
-//  - apaga os ficheiros de envio parciais em UPLOAD_TMP_DIR com mais de 24 h;
+//  - apaga os ficheiros de envio parciais e as thumbnails JPEG por carregar em UPLOAD_TMP_DIR com mais de 24 h;
 //  - volta a tentar as devoluções de quota que falharam (quota_state ainda "reserved" num estado final);
 //  - cria os resultados de tarefas concluídas cuja criação falhou a meio (result_outputs).
 const fs = require("fs");

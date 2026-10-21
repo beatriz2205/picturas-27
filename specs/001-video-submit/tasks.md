@@ -137,9 +137,95 @@ Phases 1 e 2 (T001–T031).
   tamanho do ficheiro (D5).
 - [X] T023 Verificar que `POST /:user/:project/img` e `addProjectImages` continuam iguais (COM-046).
 
+## Phase 8: *Thumbnails* (UC-VID-001/RN8, E6; 2026-10-21)
+
+**Goal**: cada vídeo e cada resultado de vídeo aparece no projeto com a sua *thumbnail* gerada no
+servidor (SUBMIT-011 a 013, COM-034, COM-050, COM-057; D16 do 000, S6).
+
+**Independent Test**: submeter `ok_720p_30s.mp4` e `vertical_1080x1920.mp4` (já em `make-videos.sh`), recortar o primeiro e
+detetar no segundo; cada cartão mostra a *thumbnail* certa (a deteção usa a da origem). Remover um vídeo
+e verificar que a *thumbnail* desaparece do armazenamento.
+
+### Armazenamento e modelo
+
+- [X] T024 [P] `imageStorageService/utils/stages.js`: acrescentar `video_thumb`.
+  `imageStorageService/route/video.js`: acrescentar `video_thumb` a `videoStages` e
+  `"image/jpeg": "jpg"` a `extByMime`, aceitando `image/jpeg` só nesse estágio (e os tipos de vídeo
+  só nos outros). Requisito: COM-057.
+- [X] T025 [P] `projects/models/videoAsset.js`: campo `thumbnail_key: {type: String, default: null}`.
+
+### Geração
+
+- [X] T026 Criar `projects/video/thumbnail.js` com `generateThumbnail(input, durationS)` (S6):
+  `ffmpeg -v error -ss <min(1, 0,1×duração)> -i <input> -frames:v 1 -vf scale=320:-2 -q:v 4 -y <tmp>.jpg`
+  em `UPLOAD_TMP_DIR`, *timeout* de 5 s; devolve o caminho ou `null` sem lançar exceção. E
+  `storeThumbnail(ownerId, projectId, input, durationS)`, que gera, carrega em `video_thumb` com
+  `storage.uploadFile(..., "image/jpeg")`, apaga o JPEG local e devolve a chave ou `null`.
+  Requisitos: SUBMIT-012, SUBMIT-013.
+- [X] T027 `projects/routes/videos.js`, `POST /:user/:project/videos`: depois de `validateReceived`,
+  executar `storeOriginal` e `storeThumbnail` em paralelo (`Promise.all`); gravar `thumbnail_key` no
+  `VideoAsset.create`; em todos os caminhos de erro (projeto removido, `11000`, exceções) apagar também
+  a *thumbnail* carregada. Requisitos: SUBMIT-011 a 013, UC-VID-001/E5.
+- [X] T028 `projects/routes/videos.js`, `POST /:user/video-project`: o mesmo que T027 (S4).
+- [X] T029 `projects/video/taskService.js`, conclusão de uma tarefa: para cada resultado com
+  `kind: "video"`, `storeThumbnail(owner, project, storage.internalUrl(owner, key), durationS)` antes de
+  criar o `videoAsset`; os resultados `detections` ficam com `thumbnail_key: null`. Uma falha não muda
+  o estado da tarefa. Se a tarefa já não puder ser concluída (cancelada entretanto), apagar a
+  *thumbnail*. Requisitos: COM-057, COM-047 (os *workers* não mudam).
+
+### API
+
+- [X] T030 `projects/video/messages.js`: `toVideoDTO` passa a `async` e devolve
+  `thumbnailUrl: thumbnail_key ? await storage.publicUrl(owner, thumbnail_key) : null` (15 min, D13).
+  Atualizar todos os chamadores (`GET .../videos` com `Promise.all`, `GET .../videos/:video`,
+  submissão, `video-project` e respostas `200` de repetição). Requisitos: COM-050, COM-057.
+
+### Remoção
+
+- [X] T031 `projects/routes/videos.js`: `DELETE .../videos/:video`, `deleteProjectVideos` e a remoção
+  de conta apagam também `thumbnail_key` (`storage.remove`, erros só registados). Requisito: COM-034.
+- [X] T032 `projects/video/janitor.js`: apagar JPEG temporários de `UPLOAD_TMP_DIR` com mais de 24 h
+  (junto com os `.part`). Requisito: COM-038.
+
+### Vídeos já existentes
+
+- [X] T033 Criar `projects/scripts/backfill-thumbnails.js`: para cada `videoAsset` com
+  `kind: "video"` e `thumbnail_key: null`, gerar a *thumbnail* a partir do URL interno e gravar a
+  chave. Idempotente; documentar a execução (`docker compose exec projects node scripts/backfill-thumbnails.js`)
+  no `quickstart.md`.
+
+### Frontend
+
+- [X] T034 `frontend/components/project-page/project-video-list.tsx` (`VideoThumbnail`): usar só
+  `thumbnailUrl` (a do vídeo ou, nas deteções, a da origem) e, sem ela ou com erro no `<img>`
+  (URL expirado), o ícone genérico; retirar o fotograma gerado no navegador, que descarregava parte do
+  vídeo por cartão. Refazer o pedido da lista quando um URL expira (`onError` → `invalidateQueries`).
+  Trocar "miniatura" por *thumbnail* nos comentários (`project-video-list.tsx`, `lib/videos.ts`).
+  Requisito: COM-057.
+
+### Testes
+
+- [X] T035 [P] Criar `projects/tests/thumbnail.test.js`:
+  - `generateThumbnail` com `ok_720p_30s.mp4` → JPEG de 320 × 180; com `vertical_1080x1920.mp4` → 320 × 568;
+    com um vídeo de 0,5 s (acrescentar `short_0_5s.mp4` a `make-videos.sh`) → JPEG; com um ficheiro inexistente → `null`.
+  - Submissão (em `submit.test.js`): `201` com `thumbnailUrl`; com o `ffmpeg` forçado a falhar
+    (`PATH` sem `ffmpeg` ou *mock*) → `201` com `thumbnailUrl: null` e o `sha256` igual.
+  - Remoção: o *mock* de `storage.remove` recebe a chave do vídeo e a da *thumbnail*.
+  - Conclusão de tarefa: resultado `video` com `thumbnail_key`; resultado `detections` sem.
+- [ ] T036 Medir de novo `SUBMIT-011` com um MP4 de 500 MB (fim da transferência → resposta, agora com
+  a *thumbnail*) e registar nas notas.
+
+**Checkpoint**: os cartões de todos os vídeos e resultados mostram a *thumbnail* do servidor, sem
+pedidos ao ficheiro de vídeo; o `e2e.sh` continua a passar.
+
+---
+
 ## Dependencies & Execution Order
 
 - 000 Phase 2 → T003, T004 → US1 → US2 → US3 → US4 → Polish.
+- Phase 8: T024 e T025 → T026 → T027, T028, T029 (em paralelo) → T030 → T031 a T034; T035 e T036 no
+  fim. O frontend (T034) já aceita `thumbnailUrl`, por isso pode ser feito a qualquer momento depois
+  de T030.
 - T006 e T007 podem avançar em paralelo com T005.
 - Os specs 002 a 005 precisam de US1 concluída (vídeos no projeto).
 
@@ -154,3 +240,10 @@ Phases 1 e 2 (T001–T031).
   no gateway e no `projects/video/storage.js`. Depois da correção, RSS dos processos `node`:
   `api_gateway` 108 → 122 MiB, `projects` 135 → 142 MiB (o `docker stats` inclui a cache de disco do
   ficheiro temporário).
+- **Phase 8 (2026-10-21)**: T024 a T035 feitas. `projects` com 104/104 testes a passar (`npm test` num
+  contentor com `ffmpeg` e MongoDB 4.4), incluindo `tests/thumbnail.test.js`, os novos casos de
+  `submit.test.js` (320 × 180, 320 × 568, repetição, falha, projeto removido, `video-project`) e de
+  `taskService.test.js` (resultados com e sem *thumbnail*). Frontend: `tsc --noEmit` sem erros. Falta
+  T036 (medir 500 MB no ambiente de referência) e verificar no `docker compose` completo (cartões no
+  navegador e o *backfill* sobre vídeos existentes). T032 já estava coberta: o janitor apaga qualquer
+  ficheiro de `UPLOAD_TMP_DIR` com mais de 24 h.

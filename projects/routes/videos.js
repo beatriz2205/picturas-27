@@ -16,6 +16,7 @@ const { limitsFor, validateInput, validateProfile, sizeError } = require("../vid
 const { probe, checkIntegrity } = require("../video/probe");
 const { receiveUpload, uniqueName } = require("../video/upload");
 const storage = require("../video/storage");
+const { storeThumbnail } = require("../video/thumbnail");
 const VideoTask = require("../models/videoTask");
 const tasks = require("../video/taskService");
 const { toVideoDTO, toTaskDTO } = require("../video/messages");
@@ -99,6 +100,39 @@ function rejectEarly(res, err) {
 
 function unlinkQuietly(p) {
   if (p) fs.promises.unlink(p).catch(() => {});
+}
+
+function removeQuietly(ownerId, key) {
+  if (!key) return Promise.resolve();
+  return storage.remove(String(ownerId), key).catch((e) => console.error("[video] falha ao apagar objeto", key, e.message));
+}
+
+// Original e thumbnail em paralelo: o tempo da thumbnail não se soma ao do carregamento (S6, SUBMIT-011).
+// A thumbnail nunca faz falhar a submissão (SUBMIT-013); se o original falhar, a thumbnail é apagada.
+async function storeOriginalAndThumbnail(ownerId, projectId, file, meta) {
+  const [original, thumbnail] = await Promise.allSettled([
+    storeOriginal(ownerId, projectId, file.path),
+    storeThumbnail(ownerId, projectId, file.path, meta.durationS),
+  ]);
+  const thumbKey = thumbnail.status === "fulfilled" ? thumbnail.value : null;
+  if (original.status === "rejected") {
+    await removeQuietly(ownerId, thumbKey);
+    throw original.reason;
+  }
+  return { storedKey: original.value, thumbKey };
+}
+
+// VideoDTO com o URL temporário da thumbnail (contracts/public-api.md; REQ-VID-COM-050, COM-057)
+async function videoDTO(v) {
+  const dto = { ...toVideoDTO(v), thumbnailUrl: null };
+  if (v.thumbnail_key) {
+    try {
+      dto.thumbnailUrl = await storage.publicUrl(String(v.owner_id), v.thumbnail_key, { expiresS: URL_EXPIRES_S });
+    } catch (e) {
+      console.error("[video] falha ao gerar URL da thumbnail", v.thumbnail_key, e.message);
+    }
+  }
+  return dto;
 }
 
 async function loadProjectOr404(ownerId, projectId) {
@@ -191,6 +225,7 @@ router.post("/:user/video-notifications/ack", async (req, res) => {
 router.post("/:user/video-project", async (req, res) => {
   let file;
   let storedKey = null;
+  let thumbKey = null;
   let projectId = null;
   try {
     const { callerId, profile } = await callerProfile(req);
@@ -210,7 +245,7 @@ router.post("/:user/video-project", async (req, res) => {
     const meta = await validateReceived(file, profile);
 
     projectId = new mongoose.Types.ObjectId();
-    storedKey = await storeOriginal(req.params.user, String(projectId), file.path);
+    ({ storedKey, thumbKey } = await storeOriginalAndThumbnail(req.params.user, String(projectId), file, meta));
 
     // Mesmos valores por omissão de POST /:user (routes/projects.js)
     const project = await Project.create({ _id: projectId, name, user_id: req.params.user, imgs: [], tools: [] });
@@ -222,15 +257,17 @@ router.post("/:user/video-project", async (req, res) => {
       created_by: callerId,
       name: await uniqueName(VideoAsset, projectId, file.originalName),
       storage_key: storedKey,
+      thumbnail_key: thumbKey,
       upload_id: UUID_RE.test(req.headers["x-upload-id"] || "") ? req.headers["x-upload-id"] : undefined,
     });
 
     console.log(JSON.stringify({ event: "video-submitted", projectId: String(projectId), sizeBytes: file.size, durationS: meta.durationS, newProject: true }));
-    res.status(201).json({ project, video: toVideoDTO(asset) });
+    res.status(201).json({ project, video: await videoDTO(asset) });
   } catch (err) {
     // Desfazer: nenhum projeto nem objeto fica para trás se o vídeo for recusado
     if (projectId) await Project.delete(req.params.user, projectId).catch(() => {});
     if (storedKey) await storage.remove(req.params.user, storedKey).catch(() => {});
+    await removeQuietly(req.params.user, thumbKey);
     toResponse(res, err);
   } finally {
     unlinkQuietly(file && file.path);
@@ -247,18 +284,19 @@ router.get("/:user/:project/videos", checkSharePermission, async (req, res) => {
     if (req.query.sourceTaskId && mongoose.isValidObjectId(req.query.sourceTaskId)) filter.source_task_id = req.query.sourceTaskId;
     if (req.query.sourceVideoId && mongoose.isValidObjectId(req.query.sourceVideoId)) filter.source_video_id = req.query.sourceVideoId;
     const videos = await VideoAsset.find(filter).sort({ createdAt: -1 });
-    res.status(200).json(videos.map(toVideoDTO));
+    res.status(200).json(await Promise.all(videos.map(videoDTO)));
   } catch (err) {
     toResponse(res, err);
   }
 });
 
-// Submeter vídeo a um projeto (UC-VID-001; REQ-VID-SUBMIT-001, 003 a 010)
+// Submeter vídeo a um projeto (UC-VID-001; REQ-VID-SUBMIT-001, 003 a 013)
 router.post("/:user/:project/videos", checkSharePermission, requireEditPermission, async (req, res) => {
   const ownerId = req.params.user;
   const projectId = req.params.project;
   let file;
   let storedKey = null;
+  let thumbKey = null;
 
   try {
     const { callerId, profile } = await callerProfile(req);
@@ -272,7 +310,7 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
     // Repetição de um envio já confirmado: devolve o vídeo existente sem receber o ficheiro (REQ-VID-SUBMIT-009)
     const existing = await VideoAsset.findOne({ project_id: projectId, upload_id: uploadId });
     if (existing) {
-      return res.status(200).json(toVideoDTO(existing));
+      return res.status(200).json(await videoDTO(existing));
     }
 
     try {
@@ -285,7 +323,7 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
     file = await receiveUpload(req, res, { maxBytes, sizeError: () => sizeError(null, profile) });
     const meta = await validateReceived(file, profile);
 
-    storedKey = await storeOriginal(ownerId, projectId, file.path);
+    ({ storedKey, thumbKey } = await storeOriginalAndThumbnail(ownerId, projectId, file, meta));
 
     // O projeto pode ter sido removido durante o envio (UC-VID-001/E5)
     if (!(await Project.getOne(ownerId, projectId))) {
@@ -301,24 +339,30 @@ router.post("/:user/:project/videos", checkSharePermission, requireEditPermissio
         created_by: callerId,
         name: await uniqueName(VideoAsset, projectId, file.originalName),
         storage_key: storedKey,
+        thumbnail_key: thumbKey,
         upload_id: uploadId,
       });
     } catch (err) {
       // Duas repetições simultâneas do mesmo envio: fica só uma entrada
       if (err && err.code === 11000) {
         await storage.remove(ownerId, storedKey).catch(() => {});
+        await removeQuietly(ownerId, thumbKey);
         storedKey = null;
+        thumbKey = null;
         const winner = await VideoAsset.findOne({ project_id: projectId, upload_id: uploadId });
-        return res.status(200).json(toVideoDTO(winner));
+        return res.status(200).json(await videoDTO(winner));
       }
       throw err;
     }
-    storedKey = null; // a partir daqui o objeto pertence ao vídeo criado
+    // a partir daqui os objetos pertencem ao vídeo criado
+    storedKey = null;
+    thumbKey = null;
 
-    console.log(JSON.stringify({ event: "video-submitted", projectId, videoId: String(asset._id), sizeBytes: file.size, durationS: meta.durationS }));
-    res.status(201).json(toVideoDTO(asset));
+    console.log(JSON.stringify({ event: "video-submitted", projectId, videoId: String(asset._id), sizeBytes: file.size, durationS: meta.durationS, thumbnail: Boolean(asset.thumbnail_key) }));
+    res.status(201).json(await videoDTO(asset));
   } catch (err) {
     if (storedKey) await storage.remove(ownerId, storedKey).catch(() => {});
+    await removeQuietly(ownerId, thumbKey);
     toResponse(res, err);
   } finally {
     unlinkQuietly(file && file.path);
@@ -366,7 +410,7 @@ router.get("/:user/:project/videos/:video", checkSharePermission, async (req, re
   try {
     await loadProjectOr404(req.params.user, req.params.project);
     const video = await loadVideoOr404(req.params.project, req.params.video);
-    res.status(200).json(toVideoDTO(video));
+    res.status(200).json(await videoDTO(video));
   } catch (err) {
     toResponse(res, err);
   }
@@ -388,7 +432,7 @@ router.get("/:user/:project/videos/:video/url", checkSharePermission, async (req
   }
 });
 
-// Remover um vídeo apaga também o objeto no armazenamento (REQ-VID-COM-034; UC-VID-001/Q5)
+// Remover um vídeo apaga também o objeto e a thumbnail no armazenamento (REQ-VID-COM-034; UC-VID-001/Q5)
 router.delete("/:user/:project/videos/:video", checkSharePermission, requireEditPermission, async (req, res) => {
   try {
     await callerProfile(req);
@@ -397,6 +441,7 @@ router.delete("/:user/:project/videos/:video", checkSharePermission, requireEdit
     // Cancela as tarefas ativas com origem neste vídeo antes de o apagar (REQ-VID-COM-017)
     await tasks.cancelActive({ source_video_id: video._id }, "source_video_removed");
     await storage.remove(req.params.user, video.storage_key);
+    await removeQuietly(req.params.user, video.thumbnail_key);
     await VideoAsset.deleteOne({ _id: video._id });
     res.sendStatus(204);
   } catch (err) {
@@ -482,6 +527,7 @@ async function deleteProjectVideos(ownerId, projectId, { deleteTasks = false } =
   const videos = await VideoAsset.find({ project_id: projectId });
   for (const v of videos) {
     await storage.remove(ownerId, v.storage_key).catch((e) => console.error("[video] falha ao apagar objeto", v.storage_key, e.message));
+    await removeQuietly(ownerId, v.thumbnail_key);
   }
   await VideoAsset.deleteMany({ project_id: projectId });
   if (deleteTasks) await VideoTask.deleteMany({ project_id: projectId });
@@ -493,4 +539,4 @@ async function deleteUserVideoTasks(userId) {
   await VideoTask.deleteMany({ user_id: userId });
 }
 
-module.exports = { router, deleteProjectVideos, deleteUserVideoTasks, toVideoDTO };
+module.exports = { router, deleteProjectVideos, deleteUserVideoTasks, toVideoDTO, videoDTO };

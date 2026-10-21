@@ -23,6 +23,14 @@ Testes automáticos: `(cd projects && npm test -- --test-name-pattern=submit)`.
    - Cancelar a 50%: não há cartão, e `ls /app/images/tmp/uploads` no `projects` está vazio.
    - DevTools → *Offline* a meio, voltar *Online* e “Tentar novamente”: fica um único cartão.
    - Repetir o mesmo `curl` com o mesmo `X-Upload-Id`: a segunda resposta é `200` com o mesmo `id`.
-4. **Projeto a partir de vídeo (US4)**
+4. **Thumbnails (Phase 8)**
+   - Depois de submeter `ok_720p_30s.mp4`, o cartão mostra a *thumbnail* (JPEG 320 × 180) e o
+     separador *Network* não tem pedidos ao `.mp4` até carregar em “Reproduzir”.
+   - Um vídeo vertical tem uma *thumbnail* 320 × 568; um resultado de deteção mostra a do vídeo de
+     origem; um recorte mostra a sua.
+   - Remover o vídeo: a chave `video_thumb` deixa de existir no armazenamento.
+   - Vídeos submetidos antes desta fase:
+     `docker compose exec projects node scripts/backfill-thumbnails.js`.
+5. **Projeto a partir de vídeo (US4)**
    - Novo projeto → separador Vídeo → `ok_720p_30s.mp4`: o projeto abre com o vídeo e sem imagens.
    - Novo projeto com `hevc.mp4`: aparece a mensagem de formato e a lista de projetos não muda.

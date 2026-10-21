@@ -11,7 +11,7 @@ Cabeçalhos: `Authorization: Bearer`, `X-Upload-Id: <uuid v4>`, `X-Video-Size: <
 
 | Resposta | Quando |
 |---|---|
-| `201 VideoDTO` | Vídeo validado, guardado e associado (SUBMIT-001, SUBMIT-006) |
+| `201 VideoDTO` | Vídeo validado, guardado e associado (SUBMIT-001, SUBMIT-006), com `thumbnailUrl` ou `null` se a *thumbnail* não foi gerada (SUBMIT-012, SUBMIT-013) |
 | `200 VideoDTO` | `X-Upload-Id` já usado neste projeto; devolve o vídeo existente (SUBMIT-009) |
 | `400 INVALID_PARAMS` | Sem ficheiro, mais de um ficheiro ou `X-Upload-Id` inválido |
 | `401 AUTH_REQUIRED` / `403 EDIT_PERMISSION_REQUIRED` | COM-001 |

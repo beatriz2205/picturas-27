@@ -18,6 +18,7 @@ processamento** → `videoTask`; **Limites do perfil** → `projects/config/vide
 | `origin` | `"upload"` \| `"task"` | `upload` para originais (UC-VID-001); `task` para resultados |
 | `name` | String | Obrigatório; único por projeto entre os `videoAsset` (ver `TRIM-007`) |
 | `storage_key` | String | Chave S3 `<projectId>/video_src/<uuid>.mp4` ou `<projectId>/video_out/<uuid>.<ext>`; nunca exposta ao cliente |
+| `thumbnail_key` | String \| null | Chave S3 `<projectId>/video_thumb/<uuid>.jpg` (D16); `null` em `detections` e quando a geração falhou (`COM-057`); nunca exposta ao cliente |
 | `size_bytes` | Number | > 0 |
 | `sha256` | String | Calculado na receção ou no fim da tarefa (verificação de `COM-026`/`COM-039`) |
 | `container` | `"mp4"` \| `"webm"` \| `"json"` | |
@@ -39,7 +40,9 @@ Regras:
 - Um `videoAsset` com `origin = task` só é criado quando a tarefa passa a `completed`, na mesma
   operação (D7). Não existem `videoAsset` para resultados parciais (`COM-029`).
 - Nenhuma operação de processamento altera um `videoAsset` existente (`COM-026`).
-- A remoção de um `videoAsset` apaga o objeto no armazenamento e cancela as tarefas ativas que o usam
+- A *thumbnail* é gerada antes de criar o `videoAsset` e guardada na mesma operação; uma falha na
+  geração deixa `thumbnail_key: null` e não impede a criação (D16).
+- A remoção de um `videoAsset` apaga o objeto e a *thumbnail* no armazenamento e cancela as tarefas ativas que o usam
   como origem (`COM-017`, `COM-034`). Os resultados derivados não são apagados em cascata: continuam a
   ser recursos do projeto, com `source_video_id` órfão, e a interface mostra "origem removida".
 
