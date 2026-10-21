@@ -1,5 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { Access, fetchFilterOptions, fetchProjectVideos, fetchVideoLimits, fetchVideoTasks, fetchVideoUrl } from "../videos";
+import {
+  Access,
+  fetchConvertOptions,
+  fetchFilterOptions,
+  fetchProjectVideos,
+  fetchVideoLimits,
+  fetchVideoTasks,
+  fetchVideoUrl,
+} from "../videos";
 
 export const videosKey = (pid: string) => ["videos", pid];
 
@@ -33,6 +41,14 @@ export const useFilterOptions = (access: Access, videoId: string) =>
   useQuery({
     queryKey: ["filter-options", access.pid, videoId],
     queryFn: () => fetchFilterOptions({ ...access, videoId }),
+    enabled: !!access.token && !!videoId,
+    staleTime: Infinity,
+  });
+
+export const useConvertOptions = (access: Access, videoId: string) =>
+  useQuery({
+    queryKey: ["convert-options", access.pid, videoId],
+    queryFn: () => fetchConvertOptions({ ...access, videoId }),
     enabled: !!access.token && !!videoId,
     staleTime: Infinity,
   });

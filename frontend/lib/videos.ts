@@ -70,6 +70,8 @@ export interface VideoApiError {
   message: string;
   limit?: { name: string; value: number | string; unit: string; profile: string };
   upgrade?: boolean;
+  fields?: Record<string, string>;
+  options?: ConvertOptions;
 }
 
 export function videoApiError(error: unknown): VideoApiError | null {
@@ -142,6 +144,31 @@ export interface FilterOptions {
   styles: FilterStyle[];
   range: { min: number; max: number; neutral: number };
 }
+
+export type VideoOutputFormat = "mp4" | "webm";
+
+export interface ConvertOptions {
+  source: {
+    container: "mp4";
+    videoCodec: string;
+    audioCodec: string | null;
+    width: number;
+    height: number;
+    durationS: number;
+    sizeBytes: number;
+  };
+  formats: { id: VideoOutputFormat; label: string }[];
+  heights: { value: number; label: string }[];
+  defaults: { format: VideoOutputFormat; height: number };
+}
+
+export const fetchConvertOptions = async (access: Access & { videoId: string }) => {
+  const { base, query } = projectPath(access);
+  const r = await api.get<ConvertOptions>(`${base}/${access.videoId}/convert-options${query}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
 
 export const fetchFilterOptions = async (access: Access & { videoId: string }) => {
   const { base, query } = projectPath(access);

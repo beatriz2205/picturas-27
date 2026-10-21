@@ -124,6 +124,9 @@ function VideoCard({
         <dt>Formato</dt>
         <dd className="text-right">{formatCodecs(video)}</dd>
       </dl>
+      {video.container === "webm" && (
+        <p className="text-xs text-muted-foreground">WebM — reproduzir ou descarregar</p>
+      )}
       <div className="flex gap-1">
         <Button size="sm" variant="outline" className="flex-1" onClick={onPlay}>
           <Play /> Reproduzir
@@ -186,7 +189,6 @@ function VideoPlayerDialog({
         {url ? (
           <video
             key={url}
-            src={url}
             controls
             autoPlay
             className="w-full max-h-[70vh] rounded-md bg-black"
@@ -197,7 +199,9 @@ function VideoPlayerDialog({
                 load(videoId);
               }
             }}
-          />
+          >
+            <source src={url} type={video?.container === "webm" ? "video/webm" : "video/mp4"} />
+          </video>
         ) : (
           <div className="flex h-64 items-center justify-center">
             <LoaderCircle className="animate-spin" />

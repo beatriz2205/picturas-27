@@ -336,6 +336,18 @@ router.get("/:user/:project/videos/:video/filter-options", checkSharePermission,
   }
 });
 
+// Formatos e resoluções disponíveis para conversão (spec 003, contracts/convert-api.md).
+router.get("/:user/:project/videos/:video/convert-options", checkSharePermission, async (req, res) => {
+  try {
+    const { profile } = await callerProfile(req);
+    await loadProjectOr404(req.params.user, req.params.project);
+    const video = await loadVideoOr404(req.params.project, req.params.video);
+    res.status(200).json(VIDEO_TOOLS.convert.options(video, profile));
+  } catch (err) {
+    toResponse(res, err);
+  }
+});
+
 router.get("/:user/:project/videos/:video", checkSharePermission, async (req, res) => {
   try {
     await loadProjectOr404(req.params.user, req.params.project);
@@ -392,12 +404,16 @@ router.post("/:user/:project/video-tasks", checkSharePermission, requireEditPerm
   try {
     const { callerId, profile } = await callerProfile(req);
     await loadProjectOr404(req.params.user, req.params.project);
+    const body = req.body || {};
+    if (body.tool === "convert") {
+      body.outputName = VIDEO_TOOLS.convert.correctOutputName(body.outputName, body.params && body.params.format);
+    }
     const task = await tasks.accept({
       callerId,
       profile,
       ownerId: req.params.user,
       projectId: req.params.project,
-      body: req.body || {},
+      body,
     });
     res.status(202).json(toTaskDTO(task));
   } catch (err) {

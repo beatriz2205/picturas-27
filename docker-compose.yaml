@@ -528,6 +528,34 @@ services:
           cpus: "1"
           memory: 2g
 
+  # Conversão de vídeo para MP4/H.264 ou WebM/VP9 (spec 003, 1 réplica).
+  video_convert_worker:
+    build:
+      context: ./Tools
+      dockerfile: video_convert/Dockerfile
+    restart: on-failure
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      IMG_STORAGE_URL: http://img_storage:11000
+      PROJECTS_URL: https://projects:9001
+      VIDEO_INTERNAL_TOKEN: ${VIDEO_INTERNAL_TOKEN:-dev-video-token}
+    networks:
+      - elk
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - video_tmp:/tmp/video
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2g
+
   ws_gateway:
     build: ./wsGateway
     restart: on-failure
