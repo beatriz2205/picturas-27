@@ -9,8 +9,9 @@ const EXCHANGE = "picturas";
 const CANCEL_EXCHANGE = "video_cancel";
 const EVENTS_QUEUE = "video_events_queue";
 const WS_QUEUE = "ws_queue";
-// Mesmas filas e argumentos de rabbitMQ/definitions.json (se diferirem, o assert falha)
-const TASK_QUEUES = ["video_noop_queue", "video_trim_queue", "video_convert_queue", "video_filter_queue", "video_detect_queue"];
+// Mesmas filas e argumentos de rabbitMQ/definitions.json (se diferirem, o assert falha). As filas vêm do
+// registo de ferramentas: uma ferramenta nova não obriga a mudar este ficheiro (REQ-VID-COM-047).
+const TASK_QUEUES = [...new Set(["video_noop_queue", ...Object.values(require("../config/video").VIDEO_TOOLS).map((t) => t.queue)])];
 const RECONNECT_MS = 5000;
 const CONFIRM_TIMEOUT_MS = 3000;
 

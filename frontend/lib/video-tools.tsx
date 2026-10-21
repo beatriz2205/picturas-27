@@ -6,7 +6,8 @@ import { FlaskConical, ScanSearch, type LucideIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Scissors, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Scissors, RefreshCw, SlidersHorizontal, Gauge } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/video-tools/filter-panel";
 import { TrimEditor } from "@/components/video-tools/trim-editor";
 import { FilterParams, NEUTRAL_FILTER, validateFilter } from "./video-filters";
@@ -172,11 +173,51 @@ const convert: VideoToolDef = {
   icon: RefreshCw,
 };
 
+// Alterar a velocidade (UC-VID-006; REQ-VID-SPD-001). Os mesmos fatores de projects/video/tools/speed.js
+const SPEED_FACTORS = [0.5, 0.75, 1.25, 1.5, 2];
+const speedLabel = (f: number) => `${String(f).replace(".", ",")}×`;
+
+function SpeedForm({ video, params, onChange }: VideoToolFormProps) {
+  const factor = typeof params.factor === "number" ? params.factor : null;
+  const duration = video.durationS ?? 0;
+  return (
+    <div className="grid gap-3">
+      <Label>Velocidade</Label>
+      <div className="flex flex-wrap gap-2">
+        {SPEED_FACTORS.map((f) => (
+          <Button key={f} type="button" size="sm" variant={factor === f ? "default" : "outline"} onClick={() => onChange({ ...params, factor: f })}>
+            {speedLabel(f)}
+          </Button>
+        ))}
+      </div>
+      {factor && duration > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {factor < 1 ? "Câmara lenta" : "Acelerado"}: o vídeo passa de {formatTime(duration).slice(0, 5)} para{" "}
+          {formatTime(duration / factor).slice(0, 5)}. O áudio acompanha a velocidade sem mudar de tom.
+        </p>
+      )}
+    </div>
+  );
+}
+
+const speed: VideoToolDef = {
+  id: "speed",
+  label: "Alterar velocidade",
+  description: "Cria uma versão em câmara lenta ou acelerada do vídeo.",
+  icon: Gauge,
+  defaultParams: () => ({ factor: 2 }),
+  Form: SpeedForm,
+  validate: (params) => (SPEED_FACTORS.includes(params.factor as number) ? null : "Escolha uma velocidade."),
+  outputName: (video, params) => `${baseName(video)} (${speedLabel(Number(params.factor))}).mp4`,
+  duplicateMessage: "Esta alteração de velocidade já está em curso.",
+};
+
 // O menu só mostra as que o servidor aceita (video-limits.tools): o "noop" só aparece fora de produção
 export const VIDEO_TOOLS: VideoToolDef[] = [
   trim,
   convert,
   filter,
+  speed,
   noop,
   detect,
 ];

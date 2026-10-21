@@ -185,6 +185,15 @@
             }
         },
         {
+            "name": "video_speed_queue",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {
+                "x-max-priority": 10
+            }
+        },
+        {
             "name": "video_convert_queue",
             "vhost": "/",
             "durable": true,
@@ -406,6 +415,14 @@
             "destination": "video_trim_queue",
             "destination_type": "queue",
             "routing_key": "video_trim_queue",
+            "arguments": {}
+        },
+        {
+            "source": "picturas",
+            "vhost": "/",
+            "destination": "video_speed_queue",
+            "destination_type": "queue",
+            "routing_key": "video_speed_queue",
             "arguments": {}
         },
         {

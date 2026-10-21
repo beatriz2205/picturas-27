@@ -52,6 +52,7 @@ module.exports = {
         trim: require("../video/tools/trim"),
         convert: require("../video/tools/convert"),
         filter: require("../video/tools/filter"),
+        speed: require("../video/tools/speed"),
       }
     : {
         noop: require("../video/tools/noop"),
@@ -59,6 +60,7 @@ module.exports = {
         trim: require("../video/tools/trim"),
         convert: require("../video/tools/convert"),
         filter: require("../video/tools/filter"),
+        speed: require("../video/tools/speed"),
       },
   // REQ-VID-FLT-001/002 (spec 004, research F3): estilos predefinidos dos filtros.
   FILTER_STYLES: [
