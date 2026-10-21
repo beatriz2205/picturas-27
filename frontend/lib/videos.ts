@@ -70,6 +70,8 @@ export interface VideoApiError {
   message: string;
   limit?: { name: string; value: number | string; unit: string; profile: string };
   upgrade?: boolean;
+  // 409 DUPLICATE_TASK: a tarefa igual já em curso (TRIM-008)
+  task?: VideoTask;
 }
 
 export function videoApiError(error: unknown): VideoApiError | null {
@@ -146,6 +148,16 @@ export interface FilterOptions {
 export const fetchFilterOptions = async (access: Access & { videoId: string }) => {
   const { base, query } = projectPath(access);
   const r = await api.get<FilterOptions>(`${base}/${access.videoId}/filter-options${query}`, {
+    headers: authHeader(access.token),
+  });
+  return r.data;
+};
+
+// Nome de resultado livre no projeto (specs/002-video-trim/contracts/trim-api.md; TRIM-007)
+export const fetchNameAvailable = async (access: Access & { name: string }) => {
+  const { base, query } = projectPath(access);
+  const name = `${query ? "&" : "?"}name=${encodeURIComponent(access.name)}`;
+  const r = await api.get<{ available: boolean; suggestion: string }>(`${base}/name-available${query}${name}`, {
     headers: authHeader(access.token),
   });
   return r.data;

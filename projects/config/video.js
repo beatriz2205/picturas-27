@@ -48,6 +48,7 @@ module.exports = {
   // O "noop" (worker de teste, REQ-VID-COM-047) só existe fora de produção.
   VIDEO_TOOLS: {
     ...(process.env.NODE_ENV === "production" ? {} : { noop: require("../video/tools/noop") }),
+    trim: require("../video/tools/trim"),
     filter: require("../video/tools/filter"),
   },
 
