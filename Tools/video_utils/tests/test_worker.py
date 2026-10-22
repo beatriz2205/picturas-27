@@ -3,6 +3,7 @@
 Armazenamento e estado das tarefas simulados; ffmpeg real.
 """
 import os
+import json
 import shutil
 import subprocess
 import threading
@@ -151,3 +152,34 @@ def test_erro_inesperado_da_ferramenta(source, tmp_path):
     r, events, _ = runner(boom, source=source, tmp_path=tmp_path)
     r.run(msg(), False, threading.Event())
     assert events[-1]["reason"]["code"] == "tool_error"
+
+
+def test_worker_republishes_progress_while_inference_is_busy(monkeypatch):
+    from types import SimpleNamespace
+    from video_utils import worker
+
+    now = [0.0]
+    monkeypatch.setattr(worker.time, "monotonic", lambda: now[0])
+
+    class Thread:
+        def __init__(self, **kwargs):
+            self.ticks = iter([True, True, False])
+        def start(self):
+            pass
+        def is_alive(self):
+            return next(self.ticks)
+
+    monkeypatch.setattr(worker.threading, "Thread", Thread)
+    published = []
+    acknowledgements = []
+    channel = SimpleNamespace(
+        basic_publish=lambda *args: published.append(json.loads(args[2])),
+        basic_ack=acknowledgements.append,
+    )
+    connection = SimpleNamespace(process_data_events=lambda **kwargs: now.__setitem__(0, now[0] + 3))
+    worker.VideoWorker("detect", lambda ctx: None)._handle(
+        connection, channel, SimpleNamespace(redelivered=False, delivery_tag=1),
+        json.dumps({"taskId": "t1"}),
+    )
+    assert [event["progress"] for event in published] == [0]
+    assert acknowledgements == [1]

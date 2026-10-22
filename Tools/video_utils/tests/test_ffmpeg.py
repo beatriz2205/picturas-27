@@ -71,3 +71,14 @@ def test_run_erro_do_ffmpeg(tmp_path):
     with pytest.raises(TaskError) as err:
         ffmpeg.run(["-i", str(tmp_path / "nao-existe.mp4"), str(tmp_path / "x.mp4")])
     assert err.value.code == "ffmpeg_error"
+
+
+def test_verify_audio_start_offset(clip, monkeypatch):
+    meta = ffmpeg.probe(clip)
+    assert ffmpeg.verify(clip, {**EXPECTED, "maxStartOffsetS": 0.04})
+    monkeypatch.setattr(ffmpeg, "probe", lambda _: {
+        **meta, "videoStartS": 0.0, "audioStartS": 0.041,
+    })
+    with pytest.raises(TaskError) as err:
+        ffmpeg.verify(clip, {"maxStartOffsetS": 0.04})
+    assert err.value.code == "output_verification_failed"

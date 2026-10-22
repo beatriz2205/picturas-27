@@ -55,6 +55,8 @@ def probe(path, timeout_s=30):
         "container": container,
         "videoStreams": len(videos),
         "audioStreams": len(audios),
+        "videoStartS": float(v.get("start_time") or 0),
+        "audioStartS": float(audios[0].get("start_time") or 0) if audios else None,
         "videoCodec": v.get("codec_name"),
         "audioCodec": audios[0].get("codec_name") if audios else None,
         "width": int(v["width"]) if v.get("width") else None,
@@ -140,6 +142,10 @@ def verify(path, expected):
             problems.append("áudio em falta" if expected["hasAudio"] else "áudio inesperado")
         elif has_audio and expected.get("audioCodec") and meta["audioCodec"] != expected["audioCodec"]:
             problems.append(f"áudio: esperado {expected['audioCodec']}, obtido {meta['audioCodec']}")
+    if expected.get("maxStartOffsetS") is not None and meta["audioStreams"]:
+        offset = abs(meta["audioStartS"] - meta["videoStartS"])
+        if offset > expected["maxStartOffsetS"] + 1e-6:
+            problems.append(f"diferença de início áudio/vídeo: {offset:.6f} s")
     if problems:
         raise TaskError("output_verification_failed", "; ".join(problems))
     return meta

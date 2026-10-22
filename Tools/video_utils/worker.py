@@ -260,11 +260,17 @@ class VideoWorker:
         th = threading.Thread(target=runner.run, args=(msg, method.redelivered, cancel_event), daemon=True)
         th.start()
 
+        last_progress = 0
+        last_progress_at = time.monotonic()
+
         # O processamento corre noutra thread; esta mantém a ligação viva (heartbeats) e publica os eventos
         while True:
             alive = th.is_alive()
             while not outbox.empty():
                 evt = outbox.get()
+                if evt["type"] == "progress":
+                    last_progress = evt["progress"]
+                    last_progress_at = time.monotonic()
                 ch.basic_publish(
                     EXCHANGE,
                     EVENTS_QUEUE,
@@ -273,6 +279,15 @@ class VideoWorker:
                 )
             if not alive:
                 break
+            # COM-052: a percentagem pode manter-se durante inferência ou I/O;
+            # a atualização continua a confirmar que o worker está ativo.
+            if time.monotonic() - last_progress_at >= 2:
+                ch.basic_publish(
+                    EXCHANGE, EVENTS_QUEUE,
+                    json.dumps(messages.progress(task_id, last_progress)),
+                    pika.BasicProperties(delivery_mode=2, content_type="application/json"),
+                )
+                last_progress_at = time.monotonic()
             conn.process_data_events(time_limit=0.5)
 
         with self._lock:

@@ -1,6 +1,7 @@
 // Leitura dos metadados de um vídeo pelo conteúdo do ficheiro (REQ-VID-COM-003), com ffprobe.
 // Decisão D6 (specs/000-video-common/research.md).
 const { execFile } = require("child_process");
+const { VideoError } = require("./errors");
 
 function run(args, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -25,8 +26,11 @@ function parseRate(rate) {
 async function probe(filePath) {
   let out;
   try {
-    out = (await run(["-v", "error", "-print_format", "json", "-show_format", "-show_streams", filePath], 10e3)).stdout;
-  } catch (_) {
+    out = (await run(["-v", "error", "-print_format", "json", "-show_format", "-show_streams", filePath], 1000)).stdout;
+  } catch (err) {
+    if (err.killed || typeof err.code !== "number") {
+      throw new VideoError("SERVICE_UNAVAILABLE", 503, "Não foi possível concluir a verificação do vídeo. Tente novamente dentro de momentos.");
+    }
     return null;
   }
 
@@ -60,17 +64,27 @@ async function probe(filePath) {
   };
 }
 
-// Lê todos os pacotes da faixa de vídeo sem descodificar: deteta ficheiros truncados ou corrompidos
-// (qualquer erro reportado pelo ffprobe com -v error invalida o ficheiro).
+// Orçamento de 2,5 s para a leitura integral: deixa tempo para metadados,
+// thumbnail e persistência no alvo de 5 s (SUBMIT-011).
+// Confirma erros de leitura numa segunda passagem; contenção e falhas do processo
+// são indisponibilidade da validação, não prova de corrupção do ficheiro.
 async function checkIntegrity(filePath) {
-  try {
-    const { stdout, stderr } = await run(
-      ["-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries", "stream=nb_read_packets", "-of", "csv=p=0", filePath],
-      60e3
-    );
-    return Number(String(stdout).trim()) > 0 && String(stderr).trim() === "";
-  } catch (_) {
-    return false;
+  const deadline = performance.now() + 2500;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { stdout, stderr } = await run(
+        ["-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries", "stream=nb_read_packets", "-of", "csv=p=0", filePath],
+        Math.max(1, Math.ceil(deadline - performance.now()))
+      );
+      if (Number(String(stdout).trim()) > 0 && !String(stderr).trim()) return true;
+      if (attempt === 1) return false;
+    } catch (err) {
+      if (err.killed || typeof err.code !== "number") {
+        if (attempt === 0 && performance.now() < deadline) continue;
+        throw new VideoError("SERVICE_UNAVAILABLE", 503, "Não foi possível concluir a verificação do vídeo. Tente novamente dentro de momentos.");
+      }
+      if (attempt === 1) return false;
+    }
   }
 }
 

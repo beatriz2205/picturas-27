@@ -261,7 +261,7 @@ async function start(taskId) {
 async function progress(taskId, value) {
   const p = Math.max(0, Math.min(99, Math.floor(Number(value) || 0)));
   const task = await VideoTask.findOneAndUpdate(
-    { _id: taskId, status: "processing", progress: { $lt: p } },
+    { _id: taskId, status: "processing", progress: { $lte: p } },
     { $set: { progress: p } },
     { new: true }
   );

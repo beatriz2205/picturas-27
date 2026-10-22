@@ -6,7 +6,7 @@ output="${2:-/tmp/video-detection-bench.json}"
 times=()
 for run in $(seq 1 10); do
   start=$(date +%s)
-  python Tools/video_detect/video_detect.py "$input" "$output" --tools people_ai obj_ai >/dev/null
+  VIDEO_DETECT_MODE=cli PYTHONPATH=Tools python3 Tools/video_detect/video_detect.py "$input" "$output" --tools people_ai obj_ai >/dev/null
   times+=("$(( $(date +%s) - start ))")
 done
 printf 'runs_seconds=%s\n' "${times[*]}"

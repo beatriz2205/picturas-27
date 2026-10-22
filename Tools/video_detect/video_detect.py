@@ -3,19 +3,17 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import subprocess
 import time
-import tempfile
 from pathlib import Path
 from typing import Callable
 
 import cv2
 import numpy as np
-import pika
-import requests
+from video_utils import ffmpeg
+from video_utils.worker import VideoWorker
 from jsonschema import validate as validate_schema
 
 try:
@@ -41,6 +39,7 @@ def _probe(path: str | Path) -> dict:
         check=True,
         capture_output=True,
         text=True,
+        timeout=30,
     )
     data = json.loads(result.stdout)
     stream = next(s for s in data["streams"] if s["codec_type"] == "video")
@@ -97,6 +96,7 @@ def detect_video(
     model=None,
     annotated_path: str | Path | None = None,
     progress: Callable[[int], None] | None = None,
+    check: Callable[[], None] = lambda: None,
 ) -> dict:
     if not tools or len(tools) != len(set(tools)):
         raise ValueError("tools must contain one or two distinct detector names")
@@ -109,7 +109,7 @@ def detect_video(
         from ultralytics import YOLO
 
         torch.set_num_threads(1)
-        model = YOLO("../models/yolov5su.pt")
+        model = YOLO(str(Path(__file__).resolve().parent.parent / "models" / "yolov5su.pt"))
 
     capture = cv2.VideoCapture(str(input_path))
     if not capture.isOpened():
@@ -131,10 +131,12 @@ def detect_video(
     index = 0
     try:
         while True:
+            check()
             ok, frame = capture.read()
             if not ok:
                 break
             result = model(frame, conf=threshold, imgsz=640, verbose=False)[0]
+            check()
             current = _detections(result, tools, threshold, metadata["width"], metadata["height"])
             if current:
                 frames.append({"index": index, "timeS": round(index / metadata["fps"], 3), "detections": current})
@@ -184,146 +186,67 @@ def main() -> None:
         threshold=args.threshold,
         task_id=args.task_id,
         video_id=args.video_id,
-        annotated_path=args.annotated,
+        annotated_path=(str(Path(args.annotated).with_suffix(".raw.mp4")) if args.annotated else None),
         progress=lambda value: print(json.dumps({"type": "progress", "progress": value}), flush=True),
     )
+    if args.annotated:
+        raw = Path(args.annotated).with_suffix(".raw.mp4")
+        try:
+            ffmpeg.run(["-i", str(raw), "-i", args.input, "-map", "0:v:0", "-map", "1:a:0?",
+                        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "copy",
+                        "-movflags", "+faststart", args.annotated])
+            meta = ffmpeg.probe(args.input)
+            ffmpeg.verify(args.annotated, {
+                "container": "mp4", "videoCodec": "h264",
+                "durationS": meta["durationS"], "hasAudio": meta["audioStreams"] > 0,
+                "audioCodec": meta["audioCodec"],
+                "maxStartOffsetS": 0.04,
+            })
+        finally:
+            raw.unlink(missing_ok=True)
     print(json.dumps({"type": "completed", "frames": document["source"]["frameCount"], "detections": sum(len(f["detections"]) for f in document["frames"]), "processingMs": round((time.monotonic() - started) * 1000)}), flush=True)
 
 
-def _rabbit_connection():
-    credentials = pika.PlainCredentials(os.getenv("RABBITMQ_USER", "user"), os.getenv("RABBITMQ_PASS", "password"))
-    return pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=os.getenv("RABBITMQ_HOST", "rabbitmq"),
-            port=int(os.getenv("RABBITMQ_PORT", "5672")),
-            credentials=credentials,
-        )
+def handle(ctx):
+    params = ctx.params
+    json_path = Path(ctx.workdir) / "detections.json"
+    raw_path = Path(ctx.workdir) / "annotations.mp4" if params.get("annotatedVideo") else None
+    if os.getenv("VIDEO_DETECT_FAIL_ANNOTATED") and raw_path:
+        raise RuntimeError("Forced annotated video failure")
+    detect_video(
+        ctx.input_path, json_path, tools=params["tools"],
+        threshold=params.get("threshold", 0.5), task_id=ctx.task_id,
+        video_id=ctx.task["sourceVideoId"], annotated_path=raw_path,
+        progress=lambda value: ctx.progress(min(90, value * 0.9)),
+        check=ctx.check,
     )
-
-
-def _send_event(channel, event):
-    channel.exchange_declare(exchange="picturas", exchange_type="direct", durable=True)
-    channel.queue_declare(queue="video_events_queue", durable=True)
-    channel.queue_bind(exchange="picturas", queue="video_events_queue", routing_key="video_events_queue")
-    channel.basic_publish(exchange="picturas", routing_key="video_events_queue", body=json.dumps(event).encode())
-
-
-def _download_source(message, directory):
-    if message.get("input", {}).get("url"):
-        url = message["input"]["url"]
-    else:
-        key = message["sourceKey"]
-        project_id, stage, name = key.split("/", 2)
-        response = requests.get(
-            f'{os.getenv("IMG_STORAGE_URL", "http://img_storage:11000")}/image/internal/{message["ownerId"]}/{project_id}/{stage}/{name}',
-            params={"expires": 3600},
-            timeout=30,
-        )
-        response.raise_for_status()
-        url = response.json()["url"]
-    target = Path(directory) / "source.mp4"
-    with requests.get(url, stream=True, timeout=60) as stream:
-        stream.raise_for_status()
-        with target.open("wb") as handle:
-            for chunk in stream.iter_content(chunk_size=1024 * 1024):
-                handle.write(chunk)
-    return target
-
-
-def _upload(path, message, content_type, extension):
-    with path.open("rb") as handle:
-        response = requests.post(
-            f'{os.getenv("IMG_STORAGE_URL", "http://img_storage:11000")}/video/{message["ownerId"]}/{message["projectId"]}/video_out',
-            files={"file": (path.name, handle, content_type)},
-            timeout=120,
-        )
-    response.raise_for_status()
-    key = response.json()["key"]
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    return key, digest
-
-
-def _handle_message(channel, message):
-    task_id = message["taskId"]
-    _send_event(channel, {"schemaVersion": 1, "type": "started", "taskId": task_id})
-    with tempfile.TemporaryDirectory(prefix=f"video-detect-{task_id}-") as directory:
-        try:
-            source = _download_source(message, directory)
-            json_path = Path(directory) / "detections.json"
-            annotated_path = Path(directory) / "annotated.mp4" if message["params"].get("annotatedVideo") else None
-            if os.getenv("VIDEO_DETECT_FAIL_ANNOTATED") and annotated_path:
-                raise RuntimeError("Forced annotated video failure")
-            last_progress = 0
-            def progress(value):
-                nonlocal last_progress
-                if value != last_progress:
-                    last_progress = value
-                    _send_event(channel, {"schemaVersion": 1, "type": "progress", "taskId": task_id, "progress": value})
-            document = detect_video(
-                source,
-                json_path,
-                tools=message["params"]["tools"],
-                threshold=message["params"]["threshold"],
-                task_id=task_id,
-                video_id=message["sourceVideoId"],
-                annotated_path=annotated_path,
-                progress=progress,
-            )
-            json_key, json_sha = _upload(json_path, message, "application/json", "json")
-            outputs = [{
-                "kind": "detections",
-                "key": json_key,
-                "sizeBytes": json_path.stat().st_size,
-                "sha256": json_sha,
-                "container": "json",
-                "name": "vídeo (deteções).json",
-            }]
-            if annotated_path:
-                video_key, video_sha = _upload(annotated_path, message, "video/mp4", "mp4")
-                outputs.append({
-                    "kind": "video",
-                    "key": video_key,
-                    "sizeBytes": annotated_path.stat().st_size,
-                    "sha256": video_sha,
-                    "container": "mp4",
-                    "name": "vídeo (anotado).mp4",
-                    "durationS": document["source"]["durationS"],
-                    "width": document["source"]["width"],
-                    "height": document["source"]["height"],
-                    "fps": document["source"]["fps"],
-                    "videoCodec": "h264",
-                })
-            _send_event(channel, {
-                "schemaVersion": 1,
-                "type": "completed",
-                "taskId": task_id,
-                "outputs": outputs,
-                "metrics": {
-                    "frames": document["source"]["frameCount"],
-                    "detections": sum(len(frame["detections"]) for frame in document["frames"]),
-                    "processingMs": 0,
-                },
-            })
-        except Exception as error:
-            print(f"video_detect task {task_id} failed: {error}", file=sys.stderr, flush=True)
-            _send_event(channel, {
-                "schemaVersion": 1,
-                "type": "failed",
-                "taskId": task_id,
-                "reason": {"code": "tool_error"},
-            })
+    ctx.check()
+    video_path = Path(ctx.workdir) / "annotated.mp4"
+    expected = None
+    if raw_path:
+        meta = ffmpeg.probe(ctx.input_path)
+        ctx.ffmpeg([
+            "-i", str(raw_path), "-i", ctx.input_path,
+            "-map", "0:v:0", "-map", "1:a:0?",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+            "-pix_fmt", "yuv420p", "-c:a", "copy",
+            "-movflags", "+faststart", str(video_path),
+        ], progress_range=(90, 99))
+        expected = {
+            "container": "mp4", "videoCodec": "h264",
+            "width": meta["width"], "height": meta["height"],
+            "durationS": meta["durationS"], "hasAudio": meta["audioStreams"] > 0,
+            "audioCodec": meta["audioCodec"],
+                "maxStartOffsetS": 0.04,
+        }
+        ffmpeg.verify(str(video_path), expected)
+    ctx.output(str(json_path), kind="detections", content_type="application/json")["name"] = "vídeo (deteções).json"
+    if raw_path:
+        ctx.output(str(video_path), expected=expected)["name"] = "vídeo (anotado).mp4"
 
 
 def run_worker():
-    connection = _rabbit_connection()
-    channel = connection.channel()
-    channel.exchange_declare(exchange="picturas", exchange_type="direct", durable=True)
-    channel.queue_declare(queue="video_detect_queue", durable=True, arguments={"x-max-priority": 10})
-    channel.queue_bind(exchange="picturas", queue="video_detect_queue", routing_key="video_detect_queue")
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue="video_detect_queue", on_message_callback=lambda ch, method, properties, body: (_handle_message(ch, json.loads(body.decode())), ch.basic_ack(method.delivery_tag)))
-    print("video_detect worker ready", flush=True)
-    channel.start_consuming()
+    VideoWorker("detect", handle).start()
 
 
 if __name__ == "__main__":
