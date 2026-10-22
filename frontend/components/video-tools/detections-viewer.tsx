@@ -62,6 +62,7 @@ export function DetectionsViewer({ videoUrl, detectionsUrl, annotatedVideoUrl, o
     };
     video.addEventListener("loadedmetadata", drawFrame);
     video.addEventListener("timeupdate", drawFrame);
+    drawFrame();
     return () => {
       video.removeEventListener("loadedmetadata", drawFrame);
       video.removeEventListener("timeupdate", drawFrame);
@@ -76,7 +77,8 @@ export function DetectionsViewer({ videoUrl, detectionsUrl, annotatedVideoUrl, o
           style={{ aspectRatio: document ? `${document.source.width} / ${document.source.height}` : "16 / 9" }}
         >
           <video ref={videoRef} src={annotatedVideoUrl ?? videoUrl} controls className="h-full w-full object-contain" />
-          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+          {/* Fit the overlay bitmap exactly like the video, including its black margins. */}
+          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
         </div>
         {document && (
           <div className="grid min-w-0 gap-2" aria-label="Fotogramas com deteções">
