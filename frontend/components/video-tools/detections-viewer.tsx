@@ -69,28 +69,31 @@ export function DetectionsViewer({ videoUrl, detectionsUrl, annotatedVideoUrl, o
   }, [document, frameIndex, classFilter, toolFilter]);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="grid gap-3">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid min-w-0 content-start gap-3">
         <div
-          className="relative flex min-h-[260px] max-h-[56vh] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black shadow-inner"
+          className="relative flex w-full min-w-0 min-h-[260px] max-h-[56vh] items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black shadow-inner"
           style={{ aspectRatio: document ? `${document.source.width} / ${document.source.height}` : "16 / 9" }}
         >
           <video ref={videoRef} src={annotatedVideoUrl ?? videoUrl} controls className="h-full w-full object-contain" />
           <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
         </div>
         {document && (
-          <div className="grid gap-2" aria-label="Fotogramas com deteções">
+          <div className="grid min-w-0 gap-2" aria-label="Fotogramas com deteções">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Timeline de deteções</span>
               <span>{document.frames.length} pontos</span>
             </div>
-            <div className="flex gap-1 rounded-md bg-muted p-1">
+            <div className="flex min-w-0 gap-1 overflow-x-auto rounded-md bg-muted p-1"
+              tabIndex={0}
+              role="region"
+              aria-label="Timeline de deteções; deslocar horizontalmente para ver todos os fotogramas">
               {document.frames.map((frame) => (
                 <button
                   key={frame.index}
                   type="button"
                   title={`Fotograma ${frame.index}`}
-                  className="h-3 min-w-1 flex-1 rounded-sm bg-primary/60 transition hover:bg-primary"
+                  className="h-3 min-w-1 flex-1 shrink-0 rounded-sm bg-primary/60 transition hover:bg-primary"
                   onClick={() => {
                     if (videoRef.current) videoRef.current.currentTime = frame.timeS;
                   }}
@@ -101,7 +104,7 @@ export function DetectionsViewer({ videoUrl, detectionsUrl, annotatedVideoUrl, o
         )}
       </div>
       {document && (
-        <div className="grid gap-3">
+        <div className="grid min-w-0 content-start gap-3">
           <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
             <Card className="flex items-center gap-2 p-2">
               <Crosshair className="size-4 text-emerald-400" />
