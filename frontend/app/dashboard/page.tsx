@@ -3,13 +3,21 @@
 import AppDropzone from "@/components/app-dropzone";
 import NewProjectDialog from "@/components/dashboard-sidebar/new-project-dialog";
 import { extractZipImages } from "@/lib/utils";
-import { ImagePlus } from "lucide-react";
+import { Film, ImagePlus } from "lucide-react";
 import { useState } from "react";
 
 export default function Dashboard() {
   const [files, setFiles] = useState<File[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   const handleDrop = async (acceptedFiles: File[]) => {
+    const video = acceptedFiles.find((file) => file.type === "video/mp4");
+    if (video) {
+      setFiles([]);
+      setVideoFile(video);
+      return;
+    }
+
     const compatibleFileTypes = [
       "image/png",
       "image/jpeg",
@@ -49,14 +57,14 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 h-full">
-      <NewProjectDialog files={files} setFiles={setFiles}>
+      <NewProjectDialog files={files} setFiles={setFiles} videoFile={videoFile} setVideoFile={setVideoFile}>
         <AppDropzone onDrop={handleDrop}>
           <div className="flex flex-col gap-4 items-center justify-center max-w-[20rem]">
             <ImagePlus size={100} />
             <p className="text-2xl font-medium">
-              Pick a project or drag and drop some images or a .zip to create a
-              new one
+              Pick a project or drag and drop images, a video, or a .zip to create a new one
             </p>
+            <Film className="size-8" />
           </div>
         </AppDropzone>
       </NewProjectDialog>

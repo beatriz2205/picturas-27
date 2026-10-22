@@ -2,7 +2,7 @@
 // Cada spec de ferramenta (002 a 005) acrescenta aqui a sua entrada, com o mesmo id do
 // VIDEO_TOOLS de projects/config/video.js.
 import type { ComponentType } from "react";
-import { FlaskConical, ScanSearch, type LucideIcon } from "lucide-react";
+import { ScanSearch, type LucideIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -48,15 +48,6 @@ export interface VideoToolDef {
 }
 
 const baseName = (video: ProjectVideo) => video.name.replace(/\.[^.]+$/, "");
-
-// Worker de teste (REQ-VID-COM-047), sem parâmetros na interface. Os parâmetros de teste do worker
-// (sleepS, corrupt) só são usados pelos scripts (specs/000-video-common/checkpoint.sh) através da API.
-const noop: VideoToolDef = {
-  id: "noop",
-  label: "Copiar (teste)",
-  description: "Copia o vídeo sem o alterar. Serve para testar a cadeia de processamento.",
-  icon: FlaskConical,
-};
 
 function DetectForm({ params, onChange }: VideoToolFormProps) {
   const tools = Array.isArray(params.tools) ? params.tools : [];
@@ -212,13 +203,12 @@ const speed: VideoToolDef = {
   duplicateMessage: "Esta alteração de velocidade já está em curso.",
 };
 
-// O menu só mostra as que o servidor aceita (video-limits.tools): o "noop" só aparece fora de produção
+// O menu só mostra as que o servidor aceita (video-limits.tools).
 export const VIDEO_TOOLS: VideoToolDef[] = [
   trim,
   convert,
   filter,
   speed,
-  noop,
   detect,
 ];
 

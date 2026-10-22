@@ -27,10 +27,14 @@ import { useVideoUpload } from "@/hooks/use-video-upload";
 export default function NewProjectDialog({
   files = [],
   setFiles,
+  videoFile = null,
+  setVideoFile,
   children,
 }: {
   files?: File[];
   setFiles?: (files: File[]) => void;
+  videoFile?: File | null;
+  setVideoFile?: (file: File | null) => void;
   children: React.ReactNode;
 }) {
   const { toast } = useToast();
@@ -100,18 +104,26 @@ export default function NewProjectDialog({
   }, [files]);
 
   useEffect(() => {
-    setName("");
-    setImageFiles([]);
-    videoFlow.reset();
-    if (setFiles && open === false) setFiles([]);
+    if (videoFile) {
+      videoFlow.setFile(videoFile);
+      setOpen(true);
+      setTab("video");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, setFiles]);
+  }, [videoFile]);
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
         if (videoBusy) return;
+        if (!next) {
+          setName("");
+          setImageFiles([]);
+          videoFlow.reset();
+          setFiles?.([]);
+          setVideoFile?.(null);
+        }
         setOpen(next);
       }}
     >
