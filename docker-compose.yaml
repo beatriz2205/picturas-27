@@ -345,6 +345,14 @@ services:
       context: ./Tools
       dockerfile: video_detect/Dockerfile
     restart: on-failure
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: password
+      IMG_STORAGE_URL: http://img_storage:11000
+      PROJECTS_URL: https://projects:9001
+      VIDEO_INTERNAL_TOKEN: ${VIDEO_INTERNAL_TOKEN:-dev-video-token}
     networks:
       - elk
     depends_on:
@@ -358,6 +366,7 @@ services:
           memory: 2G
     volumes:
       - image_data:/app/images
+      - video_tmp:/tmp/video
 
   resize_tool:
     build:

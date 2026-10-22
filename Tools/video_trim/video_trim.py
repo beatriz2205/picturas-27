@@ -82,6 +82,7 @@ def handle(ctx):
             "videoCodec": "h264",
             "durationS": end - start,
             "hasAudio": has_audio,
+            "maxStartOffsetS": 0.04,
             "audioCodec": "aac" if has_audio else None,
             **expected_size,
         },
