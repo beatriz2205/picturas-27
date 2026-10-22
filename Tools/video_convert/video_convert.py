@@ -56,6 +56,7 @@ def handle(ctx):
         "audioCodec": audio_codec,
         "durationS": ctx.input.get("durationS"),
         "hasAudio": ctx.input.get("hasAudio"),
+        "maxStartOffsetS": 0.04,
     }
     meta = ffmpeg.verify(output_path, expected)
     if min(meta["width"], meta["height"]) != target_height:

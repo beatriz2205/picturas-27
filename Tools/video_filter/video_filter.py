@@ -242,6 +242,7 @@ def handle(ctx):
             "height": height,
             "durationS": duration,
             "hasAudio": has_audio,
+            "maxStartOffsetS": 0.04,
             "audioCodec": meta["audioCodec"] if has_audio else None,
         },
     )

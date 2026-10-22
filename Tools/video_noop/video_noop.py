@@ -34,6 +34,7 @@ def handle(ctx):
             "height": ctx.input.get("height"),
             "durationS": ctx.input.get("durationS"),
             "hasAudio": ctx.input.get("hasAudio"),
+            "maxStartOffsetS": 0.04,
         },
     )
 
