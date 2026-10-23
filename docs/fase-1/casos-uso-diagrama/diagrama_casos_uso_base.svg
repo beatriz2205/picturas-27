@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000" font-family="DejaVu Sans, Dialog, Arial, sans-serif">
+<defs><marker id="arr" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0,0 L12,5 L0,10" fill="none" stroke="#1A1A1A" stroke-width="1.2"/></marker></defs>
+<rect width="1400" height="1000" fill="white"/>
+<rect x="465" y="20" width="620" height="960" fill="white" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="40" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Sistema</text>
+<ellipse cx="775" cy="95" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="99.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Registo</text>
+<ellipse cx="775" cy="155" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="159.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Login</text>
+<ellipse cx="775" cy="215" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="219.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Carregar imagens</text>
+<ellipse cx="775" cy="275" rx="135" ry="26" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="271.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Aplicar encadeamento de</text>
+<text x="775" y="286.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">ferramentas a imagens</text>
+<ellipse cx="775" cy="335" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="339.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Criar filtro personalizado</text>
+<ellipse cx="775" cy="395" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="399.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Partilhar projeto</text>
+<ellipse cx="775" cy="455" rx="135" ry="22" fill="#D9D9D9" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="459.2" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Assistente IA na edição</text>
+<ellipse cx="775" cy="560" rx="205" ry="30" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="556.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">UC-VID-001</text>
+<text x="775" y="571.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Submeter vídeo a um projeto</text>
+<ellipse cx="775" cy="650" rx="205" ry="30" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="646.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">UC-VID-002</text>
+<text x="775" y="661.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Recortar um intervalo temporal de um vídeo</text>
+<ellipse cx="775" cy="740" rx="205" ry="30" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="736.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">UC-VID-003</text>
+<text x="775" y="751.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Converter vídeo para outro formato ou resolução</text>
+<ellipse cx="775" cy="830" rx="205" ry="30" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="826.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">UC-VID-004</text>
+<text x="775" y="841.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Aplicar filtros visuais e ajustes de cor</text>
+<ellipse cx="775" cy="920" rx="205" ry="30" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.1"/>
+<text x="775" y="916.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">UC-VID-005</text>
+<text x="775" y="931.7" font-size="12" text-anchor="middle" fill="#1A1A1A" font-style="normal">Detetar pessoas e objetos num vídeo</text>
+<path d="M980,560 C1040,620 1040,860 982,914" fill="none" stroke="#1A1A1A" stroke-width="1.1" stroke-dasharray="7,5" marker-end="url(#arr)"/>
+<text x="1032" y="734.0" font-size="12" text-anchor="start" fill="#1A1A1A" font-style="normal">«extend»</text>
+<text x="1032" y="750.0" font-size="11" text-anchor="start" fill="#1A1A1A" font-style="normal">(FA5)</text>
+<circle cx="300" cy="100" r="11" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="111" x2="300" y2="150" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="278" y1="123" x2="322" y2="123" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="150" x2="283" y2="178" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="150" x2="317" y2="178" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="300" y="196" font-size="12.5" text-anchor="middle" fill="#1A1A1A" font-style="normal">Anónimo</text>
+<circle cx="300" cy="430" r="11" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="441" x2="300" y2="480" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="278" y1="453" x2="322" y2="453" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="480" x2="283" y2="508" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="480" x2="317" y2="508" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="300" y="526" font-size="12.5" text-anchor="middle" fill="#1A1A1A" font-style="normal">Utilizador</text>
+<circle cx="110" cy="430" r="11" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="110" y1="441" x2="110" y2="480" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="88" y1="453" x2="132" y2="453" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="110" y1="480" x2="93" y2="508" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="110" y1="480" x2="127" y2="508" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="110" y="526" font-size="12.5" text-anchor="middle" fill="#1A1A1A" font-style="normal">Utilizador Convidado</text>
+<circle cx="300" cy="790" r="11" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="801" x2="300" y2="840" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="278" y1="813" x2="322" y2="813" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="840" x2="283" y2="868" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="840" x2="317" y2="868" stroke="#1A1A1A" stroke-width="1.2"/>
+<text x="300" y="886" font-size="12.5" text-anchor="middle" fill="#1A1A1A" font-style="normal">Premium</text>
+<line x1="300" y1="419" x2="300.0" y2="225.0" stroke="#1A1A1A" stroke-width="1.2"/>
+<polygon points="300.0,210.0 292.0,225.0 308.0,225.0" fill="white" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="300" y1="779" x2="300.0" y2="555.0" stroke="#1A1A1A" stroke-width="1.2"/>
+<polygon points="300.0,540.0 292.0,555.0 308.0,555.0" fill="white" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="134" y1="453" x2="261.0" y2="453.0" stroke="#1A1A1A" stroke-width="1.2"/>
+<polygon points="276.0,453.0 261.0,445.0 261.0,461.0" fill="white" stroke="#1A1A1A" stroke-width="1.2"/>
+<line x1="324" y1="123" x2="640" y2="95" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="123" x2="640" y2="215" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="123" x2="640" y2="275" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="640" y2="155" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="640" y2="335" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="640" y2="395" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="570" y2="560" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="570" y2="650" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="570" y2="740" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="570" y2="830" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="453" x2="570" y2="920" stroke="#1A1A1A" stroke-width="1.1"/>
+<line x1="324" y1="813" x2="640" y2="455" stroke="#1A1A1A" stroke-width="1.1"/>
+<path d="M20,600 H251 L265,614 V712 H20 Z" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1"/>
+<path d="M251,600 V614 H265" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+<text x="29" y="620.0" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">Utilizador Convidado: herda as</text>
+<text x="29" y="634.95" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">permissões do Utilizador quando</text>
+<text x="29" y="649.9" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">convidado com link de edição;</text>
+<text x="29" y="664.85" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">com link de visualização só</text>
+<text x="29" y="679.8" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">reproduz e descarrega (RNG-07).</text>
+<path d="M1110,540 H1366 L1380,554 V690 H1110 Z" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1"/>
+<path d="M1366,540 V554 H1380" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1119" y="560.0" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">Os perfis Free (Utilizador) e</text>
+<text x="1119" y="574.95" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">Premium acedem aos mesmos</text>
+<text x="1119" y="589.9" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">casos de uso de vídeo; mudam os</text>
+<text x="1119" y="604.85" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">limites, a quota e a prioridade</text>
+<text x="1119" y="619.8" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">na fila (RNG-03 a RNG-05).</text>
+<text x="1119" y="634.75" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">O Anónimo não tem acesso a</text>
+<text x="1119" y="649.7" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">vídeo (RNG-01).</text>
+<path d="M1110,715 H1366 L1380,729 V807 H1110 Z" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1"/>
+<path d="M1366,715 V729 H1380" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1119" y="735.0" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">UC-VID-002 a UC-VID-005</text>
+<text x="1119" y="749.95" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">exigem um vídeo já submetido</text>
+<text x="1119" y="764.9" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">no projeto (pré-condição,</text>
+<text x="1119" y="779.85" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">UC-VID-001).</text>
+<path d="M1110,840 H1366 L1380,854 V912 H1110 Z" fill="#5BCDF8" stroke="#1A1A1A" stroke-width="1"/>
+<path d="M1366,840 V854 H1380" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1119" y="860.0" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">Cinzento: casos de uso da solução</text>
+<text x="1119" y="874.95" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">de base. Azul: casos de uso novos</text>
+<text x="1119" y="889.9" font-size="11.5" text-anchor="start" fill="#1A1A1A" font-style="normal">(vídeo, Fase 1).</text>
+</svg>
