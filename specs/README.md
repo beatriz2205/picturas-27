@@ -1,9 +1,9 @@
 # Specs do suporte a vídeo (Fase 1)
 
-Especificações *spec-kit* das funcionalidades de vídeo do PictuRAS, prontas para `/speckit-implement`.
+Especificações *spec-kit* das funcionalidades de vídeo do PictuRAS, implementadas, com limitações de validação identificadas.
+O estado atual e as pendências estão em [validation-status.md](validation-status.md).
 A fonte dos requisitos é o relatório da Fase 1 (Cap. 3.4, 4 e 5), também em `use cases + requisitos.md`.
-Os IDs `REQ-VID-*`, `UC-VID-*` e `RNG-*` usados aqui são os do relatório; o mapa de IDs antigos está em
-`docs/fase-1/typst-corrigido/mapa-ids.md`.
+Os IDs `REQ-VID-*`, `UC-VID-*` e `RNG-*` usados aqui são os do relatório; o mapa de IDs antigos referido no relatório não está disponível neste checkout.
 
 ## Organização
 
@@ -43,7 +43,7 @@ Estão justificadas em [000-video-common/research.md](000-video-common/research.
 - Vídeos e tarefas ficam em coleções próprias do serviço `projects` (`videoAsset`, `videoTask`), não em
   `project.imgs`. A cadeia de ferramentas de imagem não os vê (`COM-032`).
 - Cada ferramenta de vídeo é um *worker* Python próprio (`Tools/video_trim`, `video_convert`,
-  `video_filter`, `video_detect`), com uma biblioteca comum `Tools/video_utils` (FFmpeg, progresso,
+  `video_filter`, `video_detect`, `video_speed`), com uma biblioteca comum `Tools/video_utils` (FFmpeg, progresso,
   cancelamento, armazenamento).
 - Filas RabbitMQ duráveis com prioridade (`x-max-priority`), `ack` manual e `prefetch=1`. Os eventos
   dos *workers* chegam ao `projects` pela fila `video_events_queue`, e o `projects` reencaminha-os para

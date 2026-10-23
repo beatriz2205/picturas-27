@@ -6,6 +6,8 @@
 
 **Status**: Implemented
 
+Estado e limitações de validação: [revisão de 2026-10-23](../validation-status.md).
+
 **Input**: UC-VID-006 (Cap. 4.6) e requisitos `REQ-VID-SPD-001` a `006` (Cap. 5) do relatório da
 Fase 1. O ciclo de vida das tarefas, a quota, os limites, as notificações e a publicação de
 resultados vêm de [000-video-common](../000-video-common/spec.md).
@@ -21,7 +23,7 @@ resultados vêm de [000-video-common](../000-video-common/spec.md).
 - O tom do áudio é sempre mantido (RN5); a opção de o alterar fica fora do MVP (Q2).
 - O resultado pode exceder a duração máxima do perfil, por ser gerado e não submetido (RN6).
 - Resolução e cadência da origem; sem escolha de resolução (RN4).
-- Alvo de desempenho por minuto da maior das duas durações, origem ou resultado (SPD-006): o *worker*
+- Alvo de desempenho por minuto de vídeo resultante (SPD-006): o *worker*
   descodifica a origem inteira e codifica o resultado inteiro, e um alvo fixo de 2 min não era
   exequível a 0,5× com 1 vCPU.
 
@@ -46,8 +48,8 @@ resolução, o formato, o áudio e o original inalterado.
    5 s e 20 s (±0,5 s) (SPD-002).
 3. **Given** um vídeo 640 × 360 a 30 fps, **When** é processado a 0,5×, **Then** o resultado tem
    640 × 360 e 30 fps (SPD-003).
-4. **Given** um vídeo de 60 s em 1080p, **When** é processado, **Then** demora ≤ 2 min por minuto da
-   maior das duas durações (≤ 4 min a 0,5×; ≤ 2 min a 2×) em 95% das execuções no ambiente de referência (SPD-006).
+4. **Given** um vídeo de 60 s em 1080p, **When** é processado, **Then** demora ≤ 2 min por minuto de
+   vídeo resultante (≤ 4 min a 0,5×; ≤ 1 min a 2×) em 95% das execuções no ambiente de referência (SPD-006).
 
 ---
 
@@ -106,7 +108,7 @@ o áudio começa com o vídeo e tem a mesma duração.
 
 ### Non-Functional Requirements
 
-- **SPD-006**: ≤ 2 min por minuto da maior das duas durações (origem ou resultado) em 1080p (95% no
+- **SPD-006**: ≤ 2 min por minuto de vídeo resultante em 1080p (95% no
   ambiente de referência).
 
 Requisitos comuns exercidos: COM-001 a COM-031, COM-036 a COM-047, COM-051, COM-052 (ver 000).

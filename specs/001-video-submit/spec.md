@@ -4,7 +4,9 @@
 
 **Created**: 2026-10-19
 
-**Status**: Ready for implementation
+**Status**: Implemented — validation limitations tracked in tasks.md
+
+Estado e limitações de validação: [revisão de 2026-10-23](../validation-status.md).
 
 **Input**: UC-VID-001 (Cap. 4.1) e requisitos `REQ-VID-SUBMIT-001` a `013` (Cap. 5) do relatório da
 Fase 1. Usa a infraestrutura de [000-video-common](../000-video-common/spec.md): validação, limites,
@@ -189,7 +191,8 @@ Requisitos comuns usados (implementados no 000): COM-001 a COM-007, COM-029, COM
   corpo recebidos no servidor).
 - **SC-002**: 100% dos ficheiros fora da matriz ou dos limites são recusados sem entrada no projeto.
 - **SC-003**: 0 entradas duplicadas em repetições com o mesmo identificador de envio.
-- **SC-004**: Validação e geração da *thumbnail* de um vídeo de 500 MB em ≤ 5 s após a receção
+- **SC-004**: Confirmação ou rejeição de um vídeo de até 500 MB em ≤ 5 s após o fim da transferência,
+  incluindo validação, geração da thumbnail e persistência necessária à confirmação
   (SUBMIT-011).
 - **SC-005**: 0 ficheiros parciais acessíveis depois de cancelamentos e falhas de envio.
 - **SC-006**: 100% dos vídeos válidos submetidos têm *thumbnail* ou, se a geração falhar, são aceites na

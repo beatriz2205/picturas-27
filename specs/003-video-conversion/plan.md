@@ -23,7 +23,7 @@ Debian, que já os inclui); `Tools/video_utils`
 **Testing**: `pytest` (`Tools/video_convert/tests`); `node --test` (`projects/tests/convert.test.js`);
 quickstart
 
-**Performance Goals**: CONV-006: 95% em ≤ 2 min para 60 s 1080p; Premium ≤ 2 × a duração
+**Performance Goals**: CONV-006: MP4, 95% em ≤ 2 min para 60 s 1080p; MP4 Premium ≤ 2 × a duração; WebM com alvo por definir
 
 **Constraints**: só MP4/WebM; resolução ≤ original e perfil; sem cópia igual; WebM não reentra
 

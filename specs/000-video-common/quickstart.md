@@ -4,7 +4,8 @@
 
 - Docker e Docker Compose.
 - Vídeos de teste gerados com `bash projects/tests/fixtures/make-videos.sh`.
-- Três contas: `free@test`, `free2@test` (Free) e `premium@test` (Premium), e um projeto do Premium
+- Para cenários manuais, criar três contas próprias (os emails seguintes são exemplos, não contas
+  pré-carregadas): `free@test`, `free2@test` (Free) e `premium@test` (Premium), e um projeto do Premium
   partilhado com *link* “editar” e outro com *link* “ver”.
 
 ```bash
@@ -14,6 +15,13 @@ docker compose up --build -d
 
 Variável útil para os testes de tempo: `VIDEO_TIMEOUT_MIN_MS=60000` no `projects` reduz o tempo
 mínimo para 1 min. Não usar em demonstração.
+
+Os scripts `checkpoint.sh` e `load-test.sh` criam as suas próprias contas de teste.
+Para os testes locais, instalar as dependências com `npm install` em `projects` e `users`;
+os lockfiles não estão versionados. Usar Node ≥ 18.17 e Python 3.11 com FFmpeg/ffprobe.
+Os testes MongoDB exigem `TEST_MONGO_URL`; sem essa variável, os cenários correspondentes são ignorados.
+Para os workers, instalar os `requirements-dev.txt` de `video_trim`, `video_filter` e `video_speed`
+num ambiente virtual, a partir da raiz. Estes incluem as dependências comuns, NumPy e Pillow.
 
 Testes automáticos:
 
@@ -43,8 +51,9 @@ Em cada cenário, registar o pedido, os estados observados, o saldo de operaçõ
    - Uma tarefa que falha devolve a operação; uma tarefa cancelada também.
    - Com uma tarefa ativa no Free, a segunda é rejeitada. No Premium, a 3.ª é aceite e a 4.ª é
      rejeitada.
-   - `bash specs/000-video-common/load-test.sh concurrency`: 10 pedidos simultâneos com 1 operação
-     restante, só 1 aceite.
+   - Os casos de reservas concorrentes são cobertos por `users/tests/videoOps.test.js` e
+     `projects/tests/taskService.test.js` com `TEST_MONGO_URL`. O `load-test.sh` recebe um número
+     de tarefas, não o argumento `concurrency`.
 4. **Falhas (US4)**
    - Cancelar em fila e em processamento: a tarefa fica “Cancelada” e a operação é devolvida.
    - `noop` com `sleepS` acima do tempo máximo: “Falhada” com o motivo “Tempo máximo excedido”.

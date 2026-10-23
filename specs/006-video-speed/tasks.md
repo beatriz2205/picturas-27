@@ -65,14 +65,23 @@ description: "Task list: alterar a velocidade de um vídeo"
 - [x] T011 Criar `specs/006-video-speed/bench.sh` (modelo do 002) e medir SPD-006 com
   `ok_1080p_60s.mp4` e 1 vCPU: 2× em 72,8 s e 0,5× em 228,2 s (uma execução de cada). O alvo fixo de
   2 min não era exequível a 0,5×; refinado para "≤ 2 min por minuto de resultado" (Cap. 5.4).
-- [ ] T012 Repetir a medição com ≥ 10 execuções de cada fator (`bench.sh 0.5 10`, `bench.sh 2 10`) para
+- [x] T012 Repetir a medição com ≥ 10 execuções de cada fator (`bench.sh 0.5 10`, `bench.sh 2 10`) para
   o percentil 95.
-- [ ] T013 Ver o menu "Alterar velocidade" no browser (quickstart, cenários 1 a 3) e no Firefox
+- [x] T013 Ver o menu "Alterar velocidade" no browser (quickstart, cenários 1 a 3) e no Firefox
   (COM-044).
-- [ ] T014 Acrescentar a caixa "Ferramenta de velocidade" ao modelo de domínio e o UC-VID-006 ao
+- [x] T014 Acrescentar a caixa "Ferramenta de velocidade" ao modelo de domínio e o UC-VID-006 ao
   diagrama de casos de uso.
 
 ## Dependencies & Execution Order
 
 - 000 (Phases 1–5) → T001–T005 → US1 → US2 → US3 → Polish.
 - T006/T007 (Python) em paralelo com T008 (frontend).
+
+## Revisão de estado (2026-10-23)
+
+T012: séries de 10 execuções por fator comunicadas pela equipa: p95 154,5 s a 0,5× e 53,2 s
+a 2×, abaixo dos limites de 240 s e 60 s. Os registos originais não foram localizados nesta revisão.
+T013: testes manuais de interface confirmados pela equipa; registar as versões dos navegadores.
+T014: os diagramas atualizados apresentados pela equipa incluem a ferramenta e o UC-VID-006.
+Ver [estado de validação](../validation-status.md). As medições T011 são exploratórias: 72,8 s
+a 2× excede o limite atual de 60 s e não substitui a série T012.

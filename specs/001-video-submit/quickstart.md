@@ -3,7 +3,7 @@
 Pré-requisitos e arranque: [000-video-common/quickstart.md](../000-video-common/quickstart.md). Vídeos
 de teste em `projects/tests/fixtures/out/`.
 
-Testes automáticos: `(cd projects && npm test -- --test-name-pattern=submit)`.
+Testes automáticos: `(cd projects && node --test --test-concurrency=1 --test-name-pattern=submit "tests/**/*.test.js")`.
 
 ## Cenários
 

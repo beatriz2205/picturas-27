@@ -4,7 +4,9 @@
 
 **Created**: 2026-10-16 (reescrito em 2026-10-19)
 
-**Status**: Ready for implementation
+**Status**: Implemented — validation limitations tracked in tasks.md
+
+Estado e limitações de validação: [revisão de 2026-10-23](../validation-status.md).
 
 **Input**: UC-VID-003 (Cap. 4.3) e requisitos `REQ-VID-CONV-001` a `004` e `REQ-VID-CONV-006`
 (Cap. 5) do relatório da Fase 1. O ciclo de vida, a quota, os limites e a publicação de resultados vêm
@@ -48,8 +50,9 @@ o original.
    **Given** um pedido só para 720p, **Then** o resultado é MP4 (CONV-002).
 3. **Given** um resultado MP4 ou WebM, **When** é aberto no Chrome e no Firefox atuais, **Then** é
    reproduzido sem extensões (COM-044).
-4. **Given** um vídeo de 60 s 1080p, **When** é convertido, **Then** termina em ≤ 2 min em 95% das
-   execuções; um vídeo Premium termina em ≤ 2 × a sua duração (CONV-006).
+4. **Given** um vídeo de 60 s 1080p, **When** é convertido para MP4, **Then** termina em ≤ 2 min em
+   95% das execuções; para MP4 Premium, o alvo é ≤ 2 × a duração. O alvo WebM fica por definir
+   após medição (CONV-006).
 
 ---
 
@@ -112,8 +115,9 @@ usados como entrada de nenhuma ferramenta de vídeo.
 
 ### Non-Functional Requirements
 
-- **CONV-006**: Conversão de 60 s 1080p em ≤ 2 min (95% dos vídeos Free); vídeos Premium em
-  ≤ 2 × a duração.
+- **CONV-006**: Conversão para MP4 de 60 s 1080p em ≤ 2 min (95% dos vídeos Free); MP4 Premium em
+  ≤ 2 × a duração. Medir entre `processing` e `completed`, sem fila. Validar com ≥ 20 conversões
+  MP4 de 60 s 1080p. O alvo WebM fica por definir após medição.
 
 Requisitos comuns exercidos: COM-008 a COM-031, COM-036 a COM-045, COM-051, COM-052.
 
@@ -129,7 +133,7 @@ Requisitos comuns exercidos: COM-008 a COM-031, COM-036 a COM-045, COM-051, COM-
 - **SC-001**: 100% dos resultados com o formato, os *codecs* e a resolução pedidos e a duração
   igual à do original (±0,5 s).
 - **SC-002**: 0 tarefas criadas para pedidos sem alteração efetiva.
-- **SC-003**: 95% das conversões Free (≤ 60 s, ≤ 1080p) em ≤ 2 min (CONV-006).
+- **SC-003**: 95% das conversões para MP4 Free (≤ 60 s, ≤ 1080p) em ≤ 2 min (CONV-006).
 - **SC-004**: Resultados MP4 e WebM reproduzidos no Chrome e no Firefox atuais.
 
 ## Assumptions

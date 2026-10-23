@@ -98,3 +98,10 @@ description: "Task list: filtros visuais e ajustes de cor"
 
 - 000, 001 e 002/T009 → T001–T006 → US1 → US2 → Polish.
 - T007 a T009 (Python) em paralelo com T010 a T012 (frontend).
+
+## Revisão de estado (2026-10-23)
+
+T014 parcial: o benchmark existe e há medições comunicadas (314–330 s com 1 vCPU; 181 s com
+2 vCPU), mas FLT-008 não foi cumprido e não foi localizada evidência da série completa de 20
+execuções. T015: os testes manuais foram confirmados pela equipa; faltam as capturas específicas
+e a confirmação dos ajustes de Sépia/Vintage. Ver [estado de validação](../validation-status.md).

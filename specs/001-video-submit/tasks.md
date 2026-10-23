@@ -247,3 +247,10 @@ pedidos ao ficheiro de vídeo; o `e2e.sh` continua a passar.
   T036 (medir 500 MB no ambiente de referência) e verificar no `docker compose` completo (cartões no
   navegador e o *backfill* sobre vídeos existentes). T032 já estava coberta: o janitor apaga qualquer
   ficheiro de `UPLOAD_TMP_DIR` com mais de 24 h.
+
+## Revisão de estado (2026-10-23)
+
+T036 parcial: a equipa comunicou novas medições com 490 MB, incluindo thumbnail e persistência,
+mas não uma série no limite exato de 500 MiB. SUBMIT-011 não foi cumprido: após a correção, os
+envios aceites demoraram 12,9 e 55,0 s; um envio válido foi recusado com 503 em 1,1 s sob carga.
+O teste manual de submissão foi confirmado pela equipa. Ver [estado de validação](../validation-status.md).

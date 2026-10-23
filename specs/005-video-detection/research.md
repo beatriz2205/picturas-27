@@ -4,7 +4,7 @@ Base: [000-video-common/research.md](../000-video-common/research.md).
 
 ## R1. Uma inferência por fotograma para as duas ferramentas
 
-**Decision**: O *worker* `video_detect` carrega `YOLO("../models/yolov5su.pt")` uma vez. Para cada
+**Decision**: O *worker* `video_detect` carrega `YOLO("../models/yolov5su.pt")` uma vez por tarefa. Para cada
 fotograma corre `model(frame, conf=threshold, verbose=False)` com todas as classes:
 - `obj_ai` recebe todas as deteções, com `tool: "obj_ai"`;
 - `people_ai` recebe o subconjunto da classe 0 (`person`), com `tool: "people_ai"`.
@@ -23,8 +23,9 @@ inferência por ferramenta, rejeitada por duplicar o custo.
 
 ## R2. Leitura de fotogramas
 
-FFmpeg em *pipe* `rawvideo bgr24` com `-vsync cfr -r <fps>`, como em 004/F1. O fotograma é um *array*
-NumPy `(h, w, 3)` passado diretamente ao modelo (`ultralytics` aceita BGR). A memória é constante.
+A implementação lê sequencialmente com `cv2.VideoCapture`. O fotograma é um *array*
+NumPy `(h, w, 3)` BGR passado diretamente ao modelo. Os fotogramas não são todos mantidos em memória,
+mas a lista de deteções é acumulada até à escrita do JSON; a memória total não é constante.
 `index = n`, `timeS = round(n / fps, 3)`.
 
 ## R3. Formato JSON (DET-004)
@@ -58,7 +59,8 @@ Ficheiro `Tools/video_detect/detections.v1.schema.json` (JSON Schema), usado nos
 
 Na mesma passagem, se `annotatedVideo` for verdadeiro, desenha-se cada caixa com `cv2.rectangle` e
 `cv2.putText` (`"<classe> 0.91"`), com uma cor por classe (paleta fixa por `hash`), e escreve-se o
-fotograma num segundo FFmpeg (`rawvideo bgr24` → `libx264`, `-i in.mp4 -map 1:a:0? -c:a copy`). Com
+fotograma num temporário OpenCV (`mp4v`). No fim, o FFmpeg recodifica para H.264, `yuv420p`,
+e copia o áudio da origem. O resultado é verificado antes de ser carregado. Com
 as duas ferramentas, a pessoa é desenhada uma só vez (a deteção de `people_ai`). Formato MP4/H.264/AAC
 com a resolução e a duração da origem.
 
@@ -71,14 +73,13 @@ falharem, publica `failed` com `orphanKeys` (as chaves já carregadas) e o `proj
 
 ## R6. Desempenho (DET-009)
 
-YOLOv5s com entrada de 640 em CPU com 1 vCPU demora ≈ 150 a 300 ms por fotograma. 1800 fotogramas
-dão ≈ 4,5 a 9 min, dentro de 10 min mas com pouca margem. Medidas:
-- `torch.set_num_threads(1)` para evitar contenção;
-- `imgsz=640` (o mesmo que as ferramentas de imagem por omissão);
-- desenho e codificação do vídeo anotado numa *thread* separada.
-
-O tempo máximo de RNG-06 (15 min para 60 s) também tem pouca margem. A medição (T014) decide se é
-preciso propor no relatório um tempo máximo próprio para a deteção.
+A estimativa inicial de 150–300 ms por fotograma não foi confirmada. Nas medições comunicadas
+pela equipa, 60 s 1080p a 30 fps com duas ferramentas e 1 vCPU excederam o tempo máximo de 15 min,
+sem concluir. DET-009 (95% ≤ 10 min) não foi cumprido; não há série completa de 10 execuções.
+`torch.set_num_threads(1)` e `imgsz=640` estão implementados. A anotação é escrita na mesma passagem,
+sem uma thread dedicada, e depois recodificada com FFmpeg. O modelo é recarregado por tarefa.
+Ver [estado de validação](../validation-status.md) para a distinção entre medições comunicadas e
+verificações desta revisão.
 
 ## R7. Visualizador (DET-007)
 

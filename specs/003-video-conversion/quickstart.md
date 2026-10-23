@@ -4,7 +4,7 @@ Arranque: [000-video-common/quickstart.md](../000-video-common/quickstart.md). P
 `ok_1080p_60s.mp4` e `uhd_4k.mp4` (submetido como Premium).
 
 Testes: `(cd Tools && python -m pytest video_convert/tests)` e
-`(cd projects && npm test -- --test-name-pattern=convert)`.
+`(cd projects && node --test --test-concurrency=1 --test-name-pattern=convert "tests/**/*.test.js")`.
 
 1. **Converter (US1)**
    - Converter `ok_1080p_60s.mp4`: aparecem os metadados, os formatos MP4 e WebM, as resoluções
@@ -20,7 +20,10 @@ Testes: `(cd Tools && python -m pytest video_convert/tests)` e
    - `curl` com `format: "mov"` → `400` com as opções; MP4 com a altura original → `400 NO_CHANGE`,
      sem tarefa e com o saldo de operações igual.
 3. **WebM (US3)**
-   - No resultado `.webm`, Recortar, Converter, Filtrar e Detetar estão desativados com a
+   - No resultado `.webm`, Recortar, Converter, Filtrar, Detetar e Alterar velocidade estão desativados com a
      indicação do formato. Reproduzir e Descarregar funcionam.
    - `curl` com o WebM como `videoId` → `415`.
-4. **Desempenho (CONV-006)**: `bash specs/003-video-conversion/bench.sh`.
+4. **Desempenho (CONV-006)**: existe `bash Tools/video_convert/bench.sh`, mas ainda usa o
+   critério antigo (mistura MP4/WebM no percentil e impõe um alvo WebM). Não o usar para declarar
+   cumprimento de CONV-006: são necessárias ≥ 20 conversões MP4, p95 ≤ 120 s; WebM é medido à parte,
+   com alvo por definir. Ver T014 e [estado de validação](../validation-status.md).

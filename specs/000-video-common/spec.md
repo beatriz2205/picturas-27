@@ -4,7 +4,9 @@
 
 **Created**: 2026-10-19
 
-**Status**: Ready for implementation
+**Status**: Implemented — validation limitations tracked in tasks.md
+
+Estado e limitações de validação: [revisão de 2026-10-23](../validation-status.md).
 
 **Input**: Regras transversais RNG-01 a RNG-08 (Cap. 3.4) e requisitos `REQ-VID-COM-001` a
 `REQ-VID-COM-052` (Cap. 5) do relatório da Fase 1. Este spec reúne o comportamento partilhado por

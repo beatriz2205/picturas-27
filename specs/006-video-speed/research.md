@@ -45,6 +45,10 @@ Uma execução de cada (`bench.sh`), `ok_1080p_60s.mp4`, 1 vCPU, `veryfast`/CRF 
 - 2× (resultado de 30 s): 72,8 s;
 - 0,5× (resultado de 120 s): 228,2 s.
 
-O *worker* descodifica a origem inteira e codifica o resultado inteiro, por isso o custo depende da
-maior das duas durações. O alvo foi refinado de "≤ 2 min" para "≤ 2 min por minuto da maior das duas
-durações (origem ou resultado)" (Cap. 5.4), seguindo a lógica da RNG-06. `VIDEO_SPEED_PRESET` e `VIDEO_SPEED_CRF` ficam para ajustes futuros.
+Estes valores são medições exploratórias de uma execução por fator, não uma validação do percentil 95.
+O requisito SPD-006 define ≤ 2 min por minuto de **vídeo resultante**: 240 s a 0,5× e 60 s a 2×
+para uma origem de 60 s. A execução exploratória de 72,8 s a 2× excedeu esse limite.
+O custo de descodificar a origem não altera o critério de aceitação.
+`VIDEO_SPEED_PRESET` e `VIDEO_SPEED_CRF` já são configuráveis no ambiente do worker.
+As séries posteriores comunicadas no capítulo de testes estão resumidas em
+[validation-status.md](../validation-status.md).

@@ -47,20 +47,20 @@ description: "Task list: detetar pessoas e objetos num vídeo"
 **Independent Test**: Cenário 1 do [quickstart.md](./quickstart.md).
 
 - [X] T007 [US1] Criar `Tools/video_detect/video_detect.py`:
-  - carrega o modelo uma vez (`torch.set_num_threads(1)`);
-  - o *handler* lê os fotogramas `bgr24` (R2) e faz uma inferência por fotograma com
+  - carrega o modelo uma vez por tarefa (`torch.set_num_threads(1)`);
+  - o *handler* lê os fotogramas BGR com OpenCV (R2) e faz uma inferência por fotograma com
     `conf=threshold`;
   - reparte os resultados por ferramenta (R1) e só inclui confiança ≥ limiar;
   - acumula `frames` e envia progresso por fotogramas;
-  - escreve o JSON (R3), valida-o contra o esquema e carrega-o.
+  - escreve o JSON (R3) e carrega-o; a validação contra o esquema está nos testes.
   Requisitos: DET-002, DET-003, DET-004, COM-052.
-- [X] T008 [P] [US1] Criar `Tools/video_detect/tests/test_detect.py`:
+- [ ] T008 [P] [US1] Criar `Tools/video_detect/tests/test_detect.py`:
   - o JSON de um vídeo curto (10 s, gerado com fotogramas com pessoas, por exemplo `Tools/obj_ai`
     `image_objects_detected.jpg` em ciclo com `ffmpeg -loop 1`) é válido contra o esquema;
   - com limiar 0,7, todas as confianças são ≥ 0,7;
   - com as duas ferramentas, aparecem `tool` `people_ai` e `obj_ai` no mesmo fotograma.
   Requisitos: DET-002 a DET-004.
-- [X] T009 [P] [US1] Criar `Tools/video_detect/tests/test_parity.py` para DET-008:
+- [ ] T009 [P] [US1] Criar `Tools/video_detect/tests/test_parity.py` para DET-008:
   - extrair 20 fotogramas (PNG) nos instantes `k × duração/20`;
   - correr o código de deteção de `Tools/people_ai/people_ai.py` e `Tools/obj_ai/obj_ai.py`, com as
     classes importadas e as funções `count_people`/`detect_objects` sobre o PNG, ou o mesmo modelo com
@@ -101,8 +101,8 @@ description: "Task list: detetar pessoas e objetos num vídeo"
 
 - [X] T014 [US3] Criar `Tools/video_detect/annotate.py`: `draw(frame, detections)` com
   `cv2.rectangle` e `cv2.putText`, cores por classe e pessoa desenhada uma vez (R4). Em
-  `video_detect.py`, quando `annotatedVideo` for verdadeiro, escrever os fotogramas num codificador
-  FFmpeg com o áudio copiado, verificar (resolução e duração iguais à origem, ±0,5 s) e carregar depois
+  `video_detect.py`, quando `annotatedVideo` for verdadeiro, escrever um temporário OpenCV
+  `mp4v` e recodificá-lo com FFmpeg para H.264 com o áudio copiado, verificar (resolução e duração iguais à origem, ±0,5 s) e carregar depois
   do JSON. Se algo falhar, publicar `failed` com `orphanKeys` (R5). A variável de teste
   `VIDEO_DETECT_FAIL_ANNOTATED=1` força a falha do carregamento do vídeo anotado e é usada no
   quickstart. Requisitos: DET-005, DET-006, COM-027, COM-028.
@@ -115,11 +115,11 @@ description: "Task list: detetar pessoas e objetos num vídeo"
 
 ## Phase 6: Polish
 
-- [X] T016 Criar `specs/005-video-detection/bench.sh` (modelo de 002/T018). Medir DET-009 com 10
+- [ ] T016 Criar `specs/005-video-detection/bench.sh` (modelo de 002/T018). Medir DET-009 com 10
   deteções de `ok_1080p_60s.mp4` com as duas ferramentas: percentil 95 ≤ 600 s. Registar também a
   folga em relação ao tempo máximo de 15 min (R6). Se não cumprir, documentar no relatório (Cap. 8/9)
   e propor um ajuste a RNG-06 para a deteção.
-- [X] T017 Guardar capturas do visualizador e do vídeo anotado para o relatório.
+- [ ] T017 Guardar capturas do visualizador e do vídeo anotado para o relatório.
 
 ## Phase 7: Integration
 
@@ -135,3 +135,17 @@ description: "Task list: detetar pessoas e objetos num vídeo"
 - 000 e 001 → T001–T006 → US1 → US2 → US3 → Polish.
 - T007 a T009 (Python) em paralelo com T010 e T011 (frontend). T012 e T013 dependem de um JSON real
   (T007) ou de um JSON de exemplo criado a partir do esquema.
+
+## Estado verificado em 2026-10-23
+
+- T008 parcial: `test_detect.py` e `test_schema.py` validam documentos construídos no teste,
+  sem inferência real num vídeo de 10 s.
+- T009 parcial: `test_parity.py` verifica só o formato normalizado de uma caixa; falta a
+  comparação em 20 fotogramas exigida por DET-008.
+- T015 está coberta por `test_annotate.py` e `test_worker.py`, não apenas por `test_detect.py`.
+- T016 parcial: o benchmark existe, mas as 10 execuções não foram concluídas. As medições
+  comunicadas terminam por timeout; DET-009 não foi cumprido.
+- T017: a equipa confirmou os testes manuais; as capturas não foram localizadas nesta revisão.
+- O worker usa `VideoWorker`: cancelamento/prazo antes e depois de cada inferência, verificação
+  do vídeo anotado (incluindo áudio), limpeza e publicação de resultados/orphanKeys.
+  `test_worker.py` usa FFmpeg real e um modelo simulado; `e2e.sh` cobre a integração real.

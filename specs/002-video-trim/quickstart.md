@@ -4,7 +4,7 @@ Arranque: [000-video-common/quickstart.md](../000-video-common/quickstart.md). P
 `ok_1080p_60s.mp4`.
 
 Testes: `(cd Tools && python -m pytest video_trim/tests)` e
-`(cd projects && npm test -- --test-name-pattern=trim)`.
+`(cd projects && node --test --test-concurrency=1 --test-name-pattern=trim "tests/**/*.test.js")`.
 
 1. **Recortar (US1)**
    - Recortar → arrastar os marcadores para 00:10 e 00:40 → 720p → nome `clip.mp4` → o resumo mostra

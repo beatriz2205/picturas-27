@@ -30,7 +30,8 @@ novo projeto. Depende da Phase 2 do 000 (modelos, `probe`, `limits`, `storage`).
 
 **Target Platform**: Docker Compose, Nginx HTTPS
 
-**Performance Goals**: validação e geração da *thumbnail* ≤ 5 s para 500 MB após a receção
+**Performance Goals**: confirmação ou rejeição ≤ 5 s após o fim da transferência de até 500 MB,
+incluindo validação, thumbnail e persistência necessária à confirmação
 (SUBMIT-011); memória do gateway e do
 `projects` independente do tamanho do ficheiro
 

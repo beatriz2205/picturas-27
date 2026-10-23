@@ -4,7 +4,7 @@ Arranque: [000-video-common/quickstart.md](../000-video-common/quickstart.md). P
 `ok_1080p_60s.mp4`.
 
 Testes: `(cd Tools && python -m pytest video_filter/tests)` e
-`(cd projects && npm test -- --test-name-pattern=filter)`.
+`(cd projects && node --test --test-concurrency=1 --test-name-pattern=filter "tests/**/*.test.js")`.
 
 1. **Aplicar (US1)**
    - Filtros: aparecem Preto e Branco, Sépia, Vintage e os *sliders* de brilho, contraste e saturação.

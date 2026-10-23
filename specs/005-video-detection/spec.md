@@ -4,7 +4,9 @@
 
 **Created**: 2026-10-19
 
-**Status**: Ready for implementation
+**Status**: Implemented — validation limitations tracked in tasks.md
+
+Estado e limitações de validação: [revisão de 2026-10-23](../validation-status.md).
 
 **Input**: UC-VID-005 (Cap. 4.5) e requisitos `REQ-VID-DET-001` a `009` (Cap. 5) do relatório da
 Fase 1. O ciclo de vida, a quota, os limites e a publicação de resultados vêm de

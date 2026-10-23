@@ -6,7 +6,7 @@
 
 A deteção tem três partes:
 - o validador `detect` no `projects`;
-- o *worker* `Tools/video_detect`, que lê os fotogramas com FFmpeg e corre o mesmo YOLO
+- o *worker* `Tools/video_detect`, que lê os fotogramas com OpenCV e corre o mesmo YOLO
   (`yolov5su.pt`) de `people_ai` e `obj_ai`, uma vez por fotograma para as duas ferramentas; escreve
   o JSON versionado e, opcionalmente, o vídeo anotado com OpenCV e FFmpeg;
 - no frontend, o diálogo de deteção e o visualizador de deteções (vídeo com *canvas* sobreposto,

@@ -25,7 +25,7 @@ Tudo o resto (tarefa, quota, progresso, cancelamento, notificação, publicaçã
 **Testing**: `pytest` (`Tools/video_speed/tests`), `node --test` (`projects/tests/speed.test.js`),
 `e2e.sh`, `bench.sh`
 
-**Performance Goals**: SPD-006: ≤ 2 min por minuto da maior das duas durações (origem ou resultado) com 1 vCPU
+**Performance Goals**: SPD-006: ≤ 2 min por minuto de vídeo resultante com 1 vCPU
 
 **Constraints**: ±0,5 s; resolução e cadência da origem; tom mantido; MP4/H.264/AAC
 

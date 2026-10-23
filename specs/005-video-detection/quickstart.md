@@ -4,8 +4,8 @@ Arranque: [000-video-common/quickstart.md](../000-video-common/quickstart.md). P
 com pessoas e carros (por exemplo, `street_10s.mp4`, gerado em T008 ou gravado pelo grupo, em
 MP4/H.264/AAC, 1080p).
 
-Testes: `(cd Tools && python -m pytest video_detect/tests)` e
-`(cd projects && npm test -- --test-name-pattern=detect)`.
+Testes, a partir da raiz: `PYTHONPATH=Tools python -m pytest Tools/video_detect/tests` e
+`(cd projects && node --test --test-concurrency=1 --test-name-pattern=detect "tests/**/*.test.js")`.
 
 1. **Detetar (US1)**
    - Detetar no vídeo, sem nenhuma ferramenta marcada: o botão está desativado.
@@ -13,7 +13,9 @@ Testes: `(cd Tools && python -m pytest video_detect/tests)` e
    - Na conclusão, o cartão “… (deteções).json” aparece associado ao vídeo.
    - Descarregar o JSON: tem `schemaVersion: 1`, todas as confianças são ≥ 0,7 e as caixas estão em
      [0, 1].
-   - `pytest video_detect/tests/test_parity.py` → ≥ 95% de coincidência.
+   - `PYTHONPATH=Tools python -m pytest Tools/video_detect/tests/test_parity.py` verifica apenas
+     a normalização das caixas. A comparação de 20 fotogramas e ≥ 95% de coincidência (DET-008)
+     continua pendente; este teste não a substitui.
 2. **Consultar (US2)**
    - Ver deteções → filtrar “person” → saltar para 5 s: só aparecem caixas de pessoas, e a lista
      mostra as deteções do fotograma 150.

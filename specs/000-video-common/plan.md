@@ -42,7 +42,7 @@ cenários de integração do [quickstart.md](./quickstart.md) com `docker compos
 
 **Performance Goals**:
 - aceitação de pedido ≤ 2 s;
-- validação de um vídeo de 500 MB ≤ 5 s após a receção;
+- confirmação ou rejeição da submissão de até 500 MB ≤ 5 s após o fim da transferência (SUBMIT-011);
 - progresso a cada ≤ 5 s;
 - 5 tarefas em simultâneo e 100 em fila.
 

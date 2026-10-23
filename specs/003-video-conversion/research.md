@@ -54,5 +54,7 @@ aceitar se `webm` estiver na lista.
 
 ## C5. Tempo esperado
 
-CONV-006 diz “≤ 2 × duração” para Premium, e o tempo máximo de RNG-06 é 15 × duração. A medição
-(T014) regista as duas razões.
+CONV-006 limita a conversão para MP4: 95% em ≤ 120 s para 60 s 1080p, e ≤ 2 × duração para
+Premium. O alvo WebM fica por definir após medição. Não misturar os formatos no mesmo percentil.
+O benchmark legado em `Tools/video_convert/bench.sh` ainda precisa de alinhamento (T014).
+O tempo máximo de RNG-06 é um limite de execução distinto do alvo de desempenho.

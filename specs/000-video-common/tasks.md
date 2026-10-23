@@ -299,7 +299,7 @@ prioridade Premium.
   `deadlineAt < now` → `fail("timeout")` + `send_video_cancel`. Arrancar em `app.js`. Requisito: COM-040.
 - [X] T046 [US4] `DELETE .../videos/:video` e remoção de projeto: cancelar as tarefas ativas com origem
   no vídeo ou no projeto (`source_video_removed`) antes de apagar. Requisito: COM-017.
-- [X] T047 [P] [US4] Criar `projects/tests/failures.test.js`:
+- [ ] T047 [P] [US4] Criar `projects/tests/failures.test.js`:
   - *timeout* com `video_noop` `sleepS` e `TIMEOUT.minMs` reduzido por variável de ambiente em teste;
   - reinício do *worker* a meio → `failed worker_interrupted` com devolução;
   - tarefas `queued` mantidas depois do reinício;
@@ -369,7 +369,10 @@ prioridade Premium.
 ## Phase 10: Polish
 
 - [ ] T060 Correr `/speckit-analyze` sobre 000 a 005 e corrigir incoerências.
-- [X] T061 Medir `COM-036` (validação de 500 MB) e registar o resultado no relatório (Cap. 8/9).
+- [X] T061 Medir separadamente a latência de aceitação/rejeição dos pedidos de processamento
+  (`COM-036`, ≥ 20 pedidos, ≤ 2 s) e a confirmação da submissão após o fim do envio (`SUBMIT-011`,
+  ≤ 5 s). A equipa comunicou medições no capítulo de testes; SUBMIT-011 não foi cumprido.
+  As medições históricas de apenas validação abaixo não demonstram cumprimento de SUBMIT-011.
 - [X] T062 Verificar que nenhuma rota, evento ou fila de imagem mudou de contrato
   (`git diff` em `projects/routes/projects.js`, `wsGateway/index.js` e `Tools/utils`).
 
@@ -432,3 +435,11 @@ Pessoa E: T002, T006, T007, T026 (infraestrutura e wsGateway)
   seguintes (agora é descartado à segunda falha e o *watchdog* fecha a tarefa).
 - **Por fazer**: T054 (isolamento com a cadeia de imagem),
   T060 (T061 medido, T062 verificado: só acréscimos nos ficheiros de imagem).
+
+## Revisão de estado (2026-10-23)
+
+Ver [estado de validação](../validation-status.md). As notas de 2026-10-20 acima são históricas.
+T061: o tempo de validação isolada não mede SUBMIT-011; as medições posteriores incluem a
+persistência e não cumprem 5 s. T058 só cobre capacidade com noop, não ferramentas reais nem
+100 tarefas simultaneamente em fila. T047 continua parcial apesar da marca de implementação: falta
+o teste de isolamento do ficheiro malformado. T062 é inspeção, não validação de regressão.
