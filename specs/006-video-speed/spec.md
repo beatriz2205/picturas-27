@@ -101,6 +101,8 @@ o áudio começa com o vídeo e tem a mesma duração.
 - **SPD-003**: Manter a resolução e a cadência da origem.
 - **SPD-004**: Alterar a velocidade do áudio no mesmo fator, sem alterar o tom.
 - **SPD-005**: Rejeitar velocidades fora das disponíveis, sem tarefa nem reserva.
+- **SPD-007**: Recusar um pedido idêntico (mesmo vídeo e mesma velocidade) a uma tarefa ainda ativa do
+  mesmo utilizador, sem criar tarefa nem reservar quota, indicando essa tarefa (FA4).
 
 ### Non-Functional Requirements
 

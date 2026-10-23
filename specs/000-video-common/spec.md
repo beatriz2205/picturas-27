@@ -344,8 +344,9 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
   do vídeo com cada ferramenta básica, e cada ferramenta avançada concluída sem erro.
 - **COM-056**: Um lote de imagens em ZIP é processado da mesma forma antes e depois da integração do
   vídeo (separado de COM-046).
-- **COM-047**: Acrescentar uma ferramenta de vídeo alterando apenas o novo *worker*, o registo de
-  ferramentas, o validador dos parâmetros e a entrada no menu da interface.
+- **COM-047**: Acrescentar uma ferramenta de vídeo alterando apenas o novo *worker* e a sua configuração
+  (serviço no `docker-compose.yaml` e fila no `definitions.json`), o registo de ferramentas, o validador
+  dos parâmetros e a entrada no menu da interface.
 - **COM-048**: Registo por tarefa com ferramenta, duração do vídeo, tempo de fila, tempo de
   processamento e estado final.
 - **COM-049**: Arrancar os *workers* de vídeo e as dependências com um único comando documentado,
