@@ -154,16 +154,18 @@ lista de projetos.
   criado (ALT modelo de domínio: `Projeto`).
 - **SUBMIT-003**: Rejeitar o ficheiro acima do limite de tamanho do perfil antes de iniciar a
   transferência.
-- **SUBMIT-004**: Apresentar o progresso do envio.
+- **SUBMIT-004**: Apresentar a percentagem enviada, atualizada pelo menos uma vez por segundo até 100%.
 - **SUBMIT-005**: Permitir cancelar a seleção ou o envio sem alterar o projeto.
 - **SUBMIT-006**: Confirmar só depois de o ficheiro completo estar guardado e associado ao projeto.
 - **SUBMIT-007**: Cada vídeo submetido é uma nova entrada; não substitui conteúdos.
 - **SUBMIT-008**: Permitir repetir a submissão após uma falha.
 - **SUBMIT-009**: Repetir uma submissão já confirmada mantém uma só entrada.
 - **SUBMIT-010**: A submissão não altera o saldo de operações.
-- **SUBMIT-012**: Gerar, durante a submissão, uma *thumbnail* JPEG de 320 px de largura a partir do
-  fotograma a 10% da duração (no máximo a 1 s) e associá-la ao vídeo, sem alterar o original.
+- **SUBMIT-012**: Gerar, para cada vídeo aceite na submissão, uma *thumbnail* JPEG com 320 px de
+  largura e altura proporcional à do vídeo.
 - **SUBMIT-013**: Aceitar a submissão de um vídeo válido mesmo quando a *thumbnail* não é gerada.
+- **SUBMIT-014**: Extrair a *thumbnail* do fotograma no instante t = min(0,1 × duração; 1 s) (separado
+  de SUBMIT-012 no refinamento).
 
 ### Non-Functional Requirements
 

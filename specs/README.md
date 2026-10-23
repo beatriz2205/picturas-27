@@ -9,12 +9,13 @@ Os IDs `REQ-VID-*`, `UC-VID-*` e `RNG-*` usados aqui são os do relatório; o ma
 
 | Spec | Caso de uso | Requisitos | Depende de |
 |---|---|---|---|
-| [000-video-common](000-video-common/spec.md) | Transversal (RNG-01 a RNG-08) | `COM-001` a `COM-052` | — |
-| [001-video-submit](001-video-submit/spec.md) | UC-VID-001 | `SUBMIT-001` a `010` | 000 (fundações) |
+| [000-video-common](000-video-common/spec.md) | Transversal (RNG-01 a RNG-08) | `COM-001` a `COM-057` | — |
+| [001-video-submit](001-video-submit/spec.md) | UC-VID-001 | `SUBMIT-001` a `014` | 000 (fundações) |
 | [002-video-trim](002-video-trim/spec.md) | UC-VID-002 | `TRIM-001` a `011` | 000, 001 |
 | [003-video-conversion](003-video-conversion/spec.md) | UC-VID-003 | `CONV-001` a `004`, `CONV-006` | 000, 001 |
 | [004-video-filters](004-video-filters/spec.md) | UC-VID-004 | `FLT-001` a `008` | 000, 001 |
 | [005-video-detection](005-video-detection/spec.md) | UC-VID-005 | `DET-001` a `009` | 000, 001 |
+| [006-video-speed](006-video-speed/spec.md) | UC-VID-006 | `SPD-001` a `006` | 000, 001 |
 
 Os números dos specs seguem os dos casos de uso. O `000` reúne o que é comum a todas as ferramentas
 (ciclo de vida das tarefas, quota, limites por perfil, notificações, resultados, limpeza, retenção e

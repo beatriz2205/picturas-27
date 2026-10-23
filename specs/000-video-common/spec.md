@@ -266,10 +266,13 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 
 - **COM-001**: Só utilizadores registados com sessão ativa e permissão de edição no projeto submetem e
   processam vídeos (ALT `RNF44`; RNG-01, RNG-07).
-- **COM-002**: Apresentar nome, duração, resolução, tamanho e formato do vídeo selecionado.
-- **COM-003**: Validar contentor, *codec* e integridade pelo conteúdo do ficheiro, não pela extensão.
-- **COM-004 / 005 / 006**: Rejeitar vídeos acima de 100 MB / 60 s / 1920 × 1080 px (Free) ou
-  500 MB / 10 min / 3840 × 2160 px (Premium) (RNG-03).
+- **COM-002**: Apresentar nome, duração (mm:ss), resolução (largura × altura em px), tamanho (MB) e
+  formato (contentor e *codecs* de vídeo e de áudio) do vídeo selecionado.
+- **COM-003**: Rejeitar um vídeo cujo contentor ou *codecs*, lidos do conteúdo do ficheiro, não
+  pertençam à matriz de RNG-02, ou cuja faixa de vídeo não possa ser lida do primeiro ao último pacote.
+- **COM-004 / 005 / 006**: Rejeitar vídeos com mais de 104 857 600 bytes (100 MB) / 60 s / lado maior
+  acima de 1920 px ou lado menor acima de 1080 px (Free), ou 524 288 000 bytes (500 MB) / 10 min /
+  3840 px e 2160 px (Premium) (RNG-03).
 - **COM-007**: Indicar a causa específica de cada rejeição, com o limite e o valor do perfil.
 - **COM-008**: Revalidar no servidor vídeo, parâmetros, limites do perfil atual e quota sempre que
   aceita uma tarefa.
@@ -283,8 +286,8 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
   não mudam.
 - **COM-013**: Apresentar estado e percentagem de progresso de cada tarefa ativa.
 - **COM-014**: Continuar o processamento sem o cliente ligado.
-- **COM-015**: Notificar o fim de cada tarefa, mantendo a notificação pendente se o utilizador não
-  estiver ligado.
+- **COM-015**: Apresentar na interface, em ≤ 5 s após o estado final, uma notificação com a ferramenta,
+  o estado final e o motivo; se o utilizador não estiver ligado, na próxima abertura da aplicação.
 - **COM-016**: Cancelar tarefas em `queued` ou `processing` sem publicar resultado (ALT `RF17`).
 - **COM-017**: Cancelar tarefas ativas cujo vídeo de origem ou projeto seja removido.
 - **COM-018**: Rejeitar pedidos acima do limite de tarefas ativas (Free 1, Premium 3).
@@ -292,8 +295,8 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-020**: Registar o motivo de cada tarefa `failed` ou `cancelled`.
 - **COM-021**: 1 operação por tarefa aceite; Free 5/dia partilhadas com ferramentas avançadas de
   imagem; Premium sem limite (ALT `RNF48`).
-- **COM-022**: Reservar na aceitação, consolidar em `completed`, devolver em `failed`/`cancelled`
-  (ALT `RNF48`).
+- **COM-022**: Devolver ao saldo diário, no dia em que foi reservada, a operação de uma tarefa que
+  termine em `failed` ou `cancelled` (ALT `RNF48`). A reserva está em COM-021.
 - **COM-023**: Mostrar ao Free as operações restantes antes da confirmação (ALT `RNF48`).
 - **COM-024**: Sugerir Premium quando um Free é rejeitado por quota ou limite (ALT `RF64`).
 - **COM-025**: Aplicar quota, limites e tarefas ativas de quem inicia a tarefa, mesmo em projeto
@@ -308,37 +311,51 @@ Os IDs são os do Cap. 5 do relatório, sem o prefixo `REQ-VID-`.
 - **COM-030**: Reproduzir e descarregar resultados para quem tem acesso ao projeto (ALT `RF13`).
 - **COM-031**: Apresentar tarefas e resultados depois de fechar e reabrir a aplicação.
 - **COM-032**: Excluir os vídeos da cadeia de ferramentas de imagem (ALT `UC04`, `RF15`).
-- **COM-033**: Incluir vídeos no ZIP do projeto e excluí-los do PDF com aviso (ALT `RF13`).
+- **COM-033**: Incluir os vídeos e os resultados de vídeo numa pasta `videos/` do ZIP do projeto
+  (ALT `RF13`).
+- **COM-053**: Gerar o PDF do projeto só com as imagens e avisar que os vídeos não estão incluídos
+  (ALT `RF13`; separado de COM-033 no refinamento).
 - **COM-034**: Eliminar do armazenamento o vídeo ou resultado removido, incluindo a *thumbnail*, ou
   todos os do projeto removido.
 - **COM-035**: Eliminar vídeos, resultados e registos de tarefas na eliminação da conta (ALT `RF23`).
 - **COM-057**: Apresentar cada vídeo e resultado com *thumbnail*: a própria, a do vídeo de origem nos
-  resultados de deteção, ou um ícone genérico quando não existe (ALT `UC04`).
+  resultados de deteção, ou uma imagem genérica quando não existe (ALT `UC04`).
 
 ### Non-Functional Requirements
 
-- **COM-036**: Aceitação ou rejeição de um pedido de processamento em ≤ 2 s; validação de um vídeo de
-  500 MB ≤ 5 s após a receção.
+- **COM-036**: Responder a um pedido de processamento, com aceitação ou rejeição, em ≤ 2 s, medidos
+  entre a receção do pedido e o envio da resposta (a validação do envio passou a SUBMIT-011).
 - **COM-037**: 5 tarefas em simultâneo e até 100 em fila sem perda.
 - **COM-038**: Temporários e parciais eliminados em ≤ 1 h após o estado final; envios falhados ≤ 24 h.
 - **COM-039**: Original inalterado e nenhum resultado parcial em 100% dos cenários de falha,
   cancelamento e interrupção.
 - **COM-040**: Tempo máximo max(15 min, 15 min × duração em minutos); depois, `failed` com devolução.
-- **COM-041**: Após reinício, tarefas `queued` mantidas e `processing` terminadas em `failed` com devolução.
+- **COM-041**: Após o reinício de um *worker*, a tarefa que estava a processar termina em `failed` com
+  a operação devolvida e as restantes ficam em `queued`.
+- **COM-055**: O estado de todas as tarefas mantém-se quando o `projects` é reiniciado (separado de
+  COM-041).
 - **COM-042**: Ficheiro malformado termina só a sua tarefa como `failed`.
 - **COM-043**: Vídeos e resultados durante a vida do projeto; registos de tarefas 30 dias.
-- **COM-044**: Resultados reproduzíveis no Chrome e no Firefox atuais sem extensões.
+- **COM-044**: Resultados reproduzíveis sem extensões na última versão estável do Chrome e do Firefox à
+  data do teste.
 - **COM-045**: Entrada só MP4/H.264 com AAC ou sem áudio; saída MP4/H.264/AAC ou, na conversão,
   WebM/VP9/Opus.
-- **COM-046**: Zero regressões nas ferramentas e lotes de imagem.
-- **COM-047**: Nova ferramenta de vídeo sem alterar os serviços centrais.
+- **COM-046**: Num projeto de referência com 3 imagens, resultados iguais antes e depois da integração
+  do vídeo com cada ferramenta básica, e cada ferramenta avançada concluída sem erro.
+- **COM-056**: Um lote de imagens em ZIP é processado da mesma forma antes e depois da integração do
+  vídeo (separado de COM-046).
+- **COM-047**: Acrescentar uma ferramenta de vídeo alterando apenas o novo *worker*, o registo de
+  ferramentas, o validador dos parâmetros e a entrada no menu da interface.
 - **COM-048**: Registo por tarefa com ferramenta, duração do vídeo, tempo de fila, tempo de
   processamento e estado final.
-- **COM-049**: *Workers* de vídeo em contentores reproduzíveis a partir da documentação.
-- **COM-050**: Acesso restrito a autorizados (vídeos, *thumbnails*, tarefas e resultados); IDs e URLs
-  não adivinháveis; URLs válidos 15 min.
+- **COM-049**: Arrancar os *workers* de vídeo e as dependências com um único comando documentado,
+  numa máquina com Docker Engine 24+, 8 GB de RAM e 15 GB de disco livres.
+- **COM-050**: Recusar o acesso a vídeos, *thumbnails*, tarefas e resultados a quem não tenha acesso
+  ao projeto, identificando-os por valores não sequenciais.
+- **COM-054**: URLs de reprodução e de descarga de vídeo válidos durante 15 min (separado de COM-050).
 - **COM-051**: Pedidos simultâneos não ultrapassam a quota nem o limite de tarefas ativas.
-- **COM-052**: Estados, erros, quota e progresso compreensíveis; progresso a cada ≤ 5 s.
+- **COM-052**: Atualizar o progresso de uma tarefa em `processing` com intervalos ≤ 5 s entre
+  atualizações consecutivas apresentadas ao utilizador.
 
 ### Key Entities
 

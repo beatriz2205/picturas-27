@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Medição de REQ-VID-SPD-006 (spec 006, T011): N alterações de velocidade de
-# ok_1080p_60s.mp4 → percentil 95 de finishedAt − startedAt ≤ 2 min por minuto de resultado (1 vCPU).
+# ok_1080p_60s.mp4 → percentil 95 de finishedAt − startedAt ≤ 2 min por minuto da maior das duas durações, origem ou resultado (1 vCPU).
 # Segue o modelo de specs/000-video-common/load-test.sh: fala diretamente com o projects (9002) e o
 # users (10001). As tarefas são feitas uma de cada vez: o tempo medido é o de processamento de uma
 # réplica do video_speed_worker (1 vCPU), sem espera na fila. Adaptado de specs/002-video-trim/bench.sh.
@@ -13,7 +13,7 @@ USERS="${USERS:-https://localhost:10001}"
 FIX="$(cd "$(dirname "$0")/../.." && pwd)/projects/tests/fixtures/out"
 FACTOR="${1:-0.5}"
 N="${2:-10}"
-LIMIT_S=$(python3 -c "print(round(120 * 60 / $FACTOR / 60, 1))")
+LIMIT_S=$(python3 -c "print(round(120 * max(1, 1 / $FACTOR), 1))")  # origem de 60 s
 C="curl -sk"
 
 json() { python3 -c "import sys,json; d=json.load(sys.stdin); print(eval(sys.argv[1]))" "$1"; }

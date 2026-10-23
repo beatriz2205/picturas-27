@@ -45,6 +45,6 @@ Uma execução de cada (`bench.sh`), `ok_1080p_60s.mp4`, 1 vCPU, `veryfast`/CRF 
 - 2× (resultado de 30 s): 72,8 s;
 - 0,5× (resultado de 120 s): 228,2 s.
 
-O custo é proporcional à duração do resultado (é a codificação de cada fotograma). Por isso o alvo
-foi refinado de "≤ 2 min" para "≤ 2 min por minuto de resultado" (Cap. 5.4), seguindo a lógica da
-RNG-06. `VIDEO_SPEED_PRESET` e `VIDEO_SPEED_CRF` ficam para ajustes futuros.
+O *worker* descodifica a origem inteira e codifica o resultado inteiro, por isso o custo depende da
+maior das duas durações. O alvo foi refinado de "≤ 2 min" para "≤ 2 min por minuto da maior das duas
+durações (origem ou resultado)" (Cap. 5.4), seguindo a lógica da RNG-06. `VIDEO_SPEED_PRESET` e `VIDEO_SPEED_CRF` ficam para ajustes futuros.
