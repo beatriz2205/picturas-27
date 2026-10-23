@@ -64,12 +64,12 @@ description: "Task list: alterar a velocidade de um vídeo"
 
 - [x] T011 Criar `specs/006-video-speed/bench.sh` (modelo do 002) e medir SPD-006 com
   `ok_1080p_60s.mp4` e 1 vCPU: 2× em 72,8 s e 0,5× em 228,2 s (uma execução de cada). O alvo fixo de
-  2 min não era exequível a 0,5×; refinado para "≤ 2 min por minuto da maior das duas durações" (Cap. 5.4).
+  2 min não era exequível a 0,5×; refinado para "≤ 2 min por minuto de resultado" (Cap. 5.4).
 - [ ] T012 Repetir a medição com ≥ 10 execuções de cada fator (`bench.sh 0.5 10`, `bench.sh 2 10`) para
   o percentil 95.
 - [ ] T013 Ver o menu "Alterar velocidade" no browser (quickstart, cenários 1 a 3) e no Firefox
   (COM-044).
-- [x] T014 Acrescentar a caixa "Ferramenta de velocidade" ao modelo de domínio e o UC-VID-006 ao
+- [ ] T014 Acrescentar a caixa "Ferramenta de velocidade" ao modelo de domínio e o UC-VID-006 ao
   diagrama de casos de uso.
 
 ## Dependencies & Execution Order
